@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>TestPost</title>
+    <script>
+    let json = {
+        "services": {
+            "demo":null,
+            "kml":null,
+            "tms":null,
+            "wmts":null,
+            "wms": {
+                "srs":["EPSG:28992","CRS:84","EPSG:4326","EPSG:4258","EPSG:25831","EPSG:25832","EPSG:900913","EPSG:3857"],
+                "image_formats":["image/jpeg","image/png"],
+                "md":{
+                    "title":"EduGIS-CBS",
+                    "abstract":"CBS data for the EduGIS website",
+                    "online_resource":"http://linuxbackup/mapproxy/adm_grenzen_2005/service",
+                    "contact":{
+                        "person":"Beheer EduGIS",
+                        "position":"Contactpunt",
+                        "email":"info@edugis.nl"
+                    },
+                    "access_constraints":"For educational use related to EduGIS",
+                    "fees":"free, fair use"
+                }
+            }
+        },
+        "layers":[
+            {
+                "name":"adm_provincies_2005",
+                "title":"provincies",
+                "sources":["adm_provincies_2005_cache"],
+                "max_res":1.395617026009885,
+                "min_res":3907.72767282768
+            },{
+                "name":"adm_gemeenten_2005",
+                "title":"gemeenten",
+                "sources":["adm_gemeenten_2005_cache"],
+                "max_res":0.697808513004943,
+                "min_res":1953.86383641384
+            },{
+                "name":"adm_gemeente_namen_2005",
+                "title":"namen gemeenten",
+                "sources":["adm_gemeente_namen_2005_cache"],
+                "max_res":0.697808513004943,
+                "min_res":83.7370215605933
+            },{
+                "name":"adm_wijken_2005",
+                "title":"wijken",
+                "sources":["adm_wijken_2005_cache"],
+                "max_res":0.697808513004943,
+                "min_res":976.931918206923
+            },{
+                "name":"adm_wijk_namen_2005",
+                "title":"namen wijken",
+                "sources":["adm_wijk_namen_2005_cache"],
+                "max_res":0.697808513004943,
+                "min_res":55.8246810403954
+            },{
+                "name":"adm_buurten_2005",
+                "title":"buurten",
+                "sources":["adm_buurten_2005_cache"],
+                "max_res":0.697808513004943,
+                "min_res":488.46595910346
+            },{
+                "name":"adm_buurt_namen_2005",
+                "title":"namen buurten",
+                "sources":["adm_buurt_namen_2005_cache"],
+                "max_res":0.697808513004943,
+                "min_res":55.8246810403954
+            }
+        ],
+        "caches":{
+            "adm_provincies_2005_cache":{
+                "grids":["spherical_mercator"],
+                "sources":["adm_provincies_2005_wms"],
+                "format":"image/png",
+                "disable_storage":false,
+                "cache": {
+                    "type": "sqlite"
+                }
+            },
+            "adm_gemeenten_2005_cache":{
+                "grids":["spherical_mercator"],
+                "sources":["adm_gemeenten_2005_wms"],
+                "format":"image/png",
+                "disable_storage":true
+            },
+            "adm_gemeente_namen_2005_cache":{
+                "grids":["spherical_mercator"],
+                "sources":["adm_gemeente_namen_2005_wms"],
+                "format":"image/png",
+                "disable_storage":true
+            },
+            "adm_wijken_2005_cache":{
+                "grids":["spherical_mercator"],
+                "sources":["adm_wijken_2005_wms"],
+                "format":"image/png",
+                "disable_storage":true
+            },
+            "adm_wijk_namen_2005_cache":{
+                "grids":["spherical_mercator"],
+                "sources":["adm_wijk_namen_2005_wms"],
+                "format":"image/png",
+                "disable_storage":true
+            },
+            "adm_buurten_2005_cache":{
+                "grids":["spherical_mercator"],
+                "sources":["adm_buurten_2005_wms"],
+                "format":"image/png",
+                "disable_storage":true
+            },
+            "adm_buurt_namen_2005_cache":{
+                "grids":["spherical_mercator"],
+                "sources":["adm_buurt_namen_2005_wms"],
+                "format":"image/png",
+                "disable_storage":true
+            }
+        },
+        "sources":{
+            "adm_provincies_2005_wms":{
+                "type":"wms","wms_opts":{
+                    "featureinfo":true,
+                    "legendgraphic":true
+                },
+                "supported_srs":["EPSG:28992"],
+                "req":{
+                    "url":"http://mapserver.edugis.nl/cgi-bin/mapserv?map=maps/edugis/cache/adm_grenzen_2005.map&",
+                    "layers":"adm_provincies_2005",
+                    "transparent":true
+                },
+                "coverage":{
+                    "bbox":[3.20009,50.7167,7.27283,53.5571],
+                    "bbox_srs":"EPSG:4326"
+                },
+                "max_res":1.395617026009885,
+                "min_res":3907.72767282768
+            },
+            "adm_gemeenten_2005_wms":{
+                "type":"wms",
+                "wms_opts":{
+                    "featureinfo":true,
+                    "legendgraphic":true
+                },
+                "supported_srs":["EPSG:28992"],
+                "req":{
+                    "url":"http://mapserver.edugis.nl/cgi-bin/mapserv?map=maps/edugis/cache/adm_grenzen_2005.map&",
+                    "layers":"adm_gemeenten_2005",
+                    "transparent":true
+                },
+                "coverage":{
+                    "bbox":[3.20009,50.7167,7.27283,53.5571],
+                    "bbox_srs":"EPSG:4326"
+                },
+                "max_res":0.697808513004943,
+                "min_res":1953.86383641384
+            },
+            "adm_gemeente_namen_2005_wms":{
+                "type":"wms",
+                "wms_opts":{
+                    "featureinfo":true,
+                    "legendgraphic":true
+                },
+                "supported_srs":["EPSG:28992"],
+                "req":{
+                    "url":"http://mapserver.edugis.nl/cgi-bin/mapserv?map=maps/edugis/cache/adm_grenzen_2005.map&",
+                    "layers":"adm_gemeente_namen_2005",
+                    "transparent":true
+                },
+                "coverage":{
+                    "bbox":[3.20009,50.7167,7.27283,53.5571],
+                    "bbox_srs":"EPSG:4326"
+                },
+                "max_res":0.697808513004943,
+                "min_res":83.7370215605933
+            },
+            "adm_wijken_2005_wms":{
+                "type":"wms",
+                "wms_opts":{
+                    "featureinfo":true,
+                    "legendgraphic":true
+                },
+                "supported_srs":["EPSG:28992"],
+                "req":{
+                    "url":"http://mapserver.edugis.nl/cgi-bin/mapserv?map=maps/edugis/cache/adm_grenzen_2005.map&",
+                    "layers":"adm_wijken_2005",
+                    "transparent":true
+                },
+                "coverage":{
+                    "bbox":[3.20009,50.7167,7.27283,53.5571],
+                    "bbox_srs":"EPSG:4326"
+                },
+                "max_res":0.697808513004943,
+                "min_res":976.931918206923
+            },
+            "adm_wijk_namen_2005_wms":{
+                "type":"wms",
+                "wms_opts":{
+                    "featureinfo":true,
+                    "legendgraphic":true
+                },
+                "supported_srs":["EPSG:28992"],
+                "req":{
+                    "url":"http://mapserver.edugis.nl/cgi-bin/mapserv?map=maps/edugis/cache/adm_grenzen_2005.map&",
+                    "layers":"adm_wijk_namen_2005",
+                    "transparent":true
+                },
+                "coverage":{
+                    "bbox":[3.20009,50.7167,7.27283,53.5571],
+                    "bbox_srs":"EPSG:4326"
+                },
+                "max_res":0.697808513004943,
+                "min_res":55.8246810403954
+            },
+            "adm_buurten_2005_wms":{
+                "type":"wms",
+                "wms_opts":{
+                    "featureinfo":true,
+                    "legendgraphic":true
+                },
+                "supported_srs":["EPSG:28992"],
+                "req":{
+                    "url":"http://mapserver.edugis.nl/cgi-bin/mapserv?map=maps/edugis/cache/adm_grenzen_2005.map&",
+                    "layers":"adm_buurten_2005",
+                    "transparent":true
+                },
+                "coverage":{
+                    "bbox":[3.20009,50.7167,7.27283,53.5571],
+                    "bbox_srs":"EPSG:4326"
+                },
+                "max_res":0.697808513004943,
+                "min_res":488.46595910346
+            },
+            "adm_buurt_namen_2005_wms":{
+                "type":"wms",
+                "wms_opts":{
+                    "featureinfo":true,
+                    "legendgraphic":true
+                },
+                "supported_srs":["EPSG:28992"],
+                "req":{
+                    "url":"http://mapserver.edugis.nl/cgi-bin/mapserv?map=maps/edugis/cache/adm_grenzen_2005.map&",
+                    "layers":"adm_buurt_namen_2005",
+                    "transparent":true
+                },
+                "coverage":{
+                    "bbox":[3.20009,50.7167,7.27283,53.5571],
+                    "bbox_srs":"EPSG:4326"
+                },
+                "max_res":0.697808513004943,
+                "min_res":55.8246810403954
+            }
+        },
+        "grids":{
+            "global_geodetic_sqrt2":{
+                "base":"GLOBAL_GEODETIC",
+                "res_factor":"sqrt2"
+            },
+            "spherical_mercator":{
+                "base":"GLOBAL_MERCATOR",
+                "tile_size":[256,256],
+                "srs":"EPSG:3857"
+            },
+            "nltilingschema":{
+                "tile_size":[256,256],
+                "srs":"EPSG:28992",
+                "bbox":[-285401.92,22598.08,595401.92,903401.92],
+                "bbox_srs":"EPSG:28992",
+                "min_res":3440.64,
+                "max_res":0.21,
+                "origin":"sw"
+            }
+        },
+        "globals":{
+            "cache":{
+                "meta_buffer":200,
+                "meta_size":[4,4],
+                "base_dir":"/home/anneb/project/mapproxy/mp",
+                "lock_dir":"/home/anneb/project/mapproxy/mplocks"
+            },
+            "image":{
+                "resampling_method":"bicubic"
+            }
+        }
+    }
+    function postIt() {
+        return fetch('/mapproxyupdate/testpost.yaml', {
+            method: 'POST',
+            mode: 'cors',
+            headers: {
+                "Content-Type": "application/json"
+            },
+            redirect: "follow",
+            referrer: "client",
+            body: JSON.stringify(json)
+        })
+    }
+    </script>
+
+</head>
+<body>
+    <button onclick="postIt()">Post</button>
+</body>
+</html>
