@@ -1,0 +1,19 @@
+{
+    "mapproxydir" : "/home/user/mapproxy",
+    "metadata": {
+        "title":"title",
+        "abstract":"abstract",
+        "online_resource":"http://localhost/mapproxy",
+        "contact":{
+            "person":"Project support",
+            "position":"Contact",
+            "organization": "example.org",
+            "city": "My City",
+            "postcode": "POSTCODE",
+            "country": "Country",
+            "email":"info@example.org"
+        },
+        "access_constraints":"None",
+        "fees":"free, fair use"
+    }
+}

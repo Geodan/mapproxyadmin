@@ -1,4 +1,0 @@
-{
-    "mapproxydir" : "/path/to/root/dir/of/mapproxy",
-    "onlineresource" : "http://localhost/mapproxy"
-}

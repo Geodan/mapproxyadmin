@@ -12,7 +12,7 @@ const fs = require('fs');
 const fsPromises = fs.promises;
 const jsyaml = require('js-yaml');
 const sanitize = require('sanitize-filename');
-const config = require('./config.json')
+const config = require('./public/config.json')
 
 const port = 8083;
 
@@ -171,7 +171,9 @@ function readYaml(mpconfig) {
     return fsPromises.readFile(config.mapproxydir + 'projects/' + mpconfig).then(data=>{
         return {name: mpconfig, config: jsyaml.safeLoad(data)};
     }).catch(error=>{
-        console.log(error);
+        if (error.code === 'ENOENT') {
+            return {name: mpconfig, error: 'not found'}
+        }
         return {name: mpconfig, error: error};
     });
 }
@@ -213,8 +215,8 @@ app.get('/getcapabilities', (req, res) => {
 if (!config.mapproxydir.endsWith('/')) {
     config.mapproxydir += '/';
 }
-if (!config.onlineresource.endsWith('/')) {
-    config.onlineresource += '/';
+if (!config.metadata.online_resource.endsWith('/')) {
+    config.metadata.online_resource += '/';
 }
 
 
@@ -348,7 +350,7 @@ services:
       # metadata used in capabilities documents
       title: '${req.query.servicetitle}'
       abstract: '${req.query.serviceabstract}'
-      onlineresource: ${config.onlineresource + 'tempproxy'}
+      onlineresource: ${config.metadata.online_resource + 'tempproxy'}
       contact:
          person: ${req.query.contactpersonprimary}
          position: Contactpunt

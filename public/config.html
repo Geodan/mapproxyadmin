@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Config</title>
+    <script>
+    function getDefaultConfig(){
+        return fetch('./config.json').then(response=>response.json()).then(json=>{
+            return json;
+        })
+    }
+    function getConfig() {
+        if (window.localStorage.config) {
+            return new Promise((resolve, reject)=>{
+                resolve(JSON.parse(window.localStorage.config));
+            });
+        } else {
+            return getDefaultConfig().then(config=>{
+                window.localStorage.config = JSON.stringify(config);
+                return config;
+            })
+        }
+    }
+    </script>
+</head>
+<body >
+    <h1>Configuration</h1>
+    <label for="mapproxydir">Mapproxy root directory:</label>
+    <input type="text" id="mapproxydir" name="mapproxydir" size="65"><br>
+    <label for="online_resource">Online resource</label>
+    <input type="text" id="online_resource" name="online_resource" size="65"><br>
+    <label for="access_constraints">Access constraints</label>
+    <input type="text" id="access_constraints" name="access_constraints" size="65"><br>
+    <label for="fees">Fees</label>
+    <input type="text" id="fees" name="fees" size="65"><br>
+    <b>Contact</b><br>
+    <label for="person">Person</label>
+    <input type="text" id="person" name="person" size="65"><br>
+    <label for="position">Position</label>
+    <input type="text" id="position" name="position" size="65"><br>
+    <label for="organization">Organization</label>
+    <input type="text" id="organization" name="organization" size="65"><br>
+    <label for="city">City</label>
+    <input type="text" id="city" name="city" size="65"><br>
+    <label for="postcode">Postcode</label>
+    <input type="text" id="postcode" name="postcode" size="65"><br>
+    <label for="country">Country</label>
+    <input type="text" id="country" name="country" size="65"><br>
+    <label for="email">E-mail</label>
+    <input type="text" id="email" name="email" size="65"><br>
+
+    <button id="save">Save</button> <button id="reset">Reset to default</button><br>
+    <a href="index.html">Home</a>
+    <script>
+        getConfig().then(config=>{
+            document.querySelector("#mapproxydir").value = config.mapproxydir;
+            document.querySelector("#online_resource").value = config.metadata.online_resource;
+            document.querySelector("#access_constraints").value = config.metadata.access_constraints;
+            document.querySelector("#fees").value = config.metadata.fees;
+            document.querySelector("#person").value = config.metadata.contact.person;
+            document.querySelector("#position").value = config.metadata.contact.position;
+            document.querySelector("#organization").value = config.metadata.contact.organization;
+            document.querySelector("#city").value = config.metadata.contact.city;
+            document.querySelector("#country").value = config.metadata.contact.country;
+            document.querySelector("#postcode").value = config.metadata.contact.postcode;
+            document.querySelector("#email").value = config.metadata.contact.email;
+        })
+        document.querySelector('#save').addEventListener("click", (e)=>{
+            getConfig().then(config=>{
+                config.mapproxydir = document.querySelector('#mapproxydir').value;
+                config.metadata.online_resource = document.querySelector('#online_resource').value;
+                config.metadata.access_constraints = document.querySelector('#access_constraints').value;
+                config.metadata.fees = document.querySelector('#fees').value;
+                config.metadata.contact.person = document.querySelector('#person').value;
+                config.metadata.contact.position = document.querySelector('#position').value;
+                config.metadata.contact.organization = document.querySelector('#organization').value;
+                config.metadata.contact.city = document.querySelector('#city').value;
+                config.metadata.contact.postcode = document.querySelector('#postcode').value;
+                config.metadata.contact.country = document.querySelector('#country').value;
+                config.metadata.contact.email = document.querySelector('#email').value;
+                window.localStorage.config = JSON.stringify(config);
+            })
+        })
+        document.querySelector('#reset').addEventListener("click", (e)=>{
+            getDefaultConfig().then(config=>{
+                window.localStorage.config = JSON.stringify(config);
+                location.reload();
+            })
+        })
+    </script>
+</body>
+</html>
