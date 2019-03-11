@@ -12,12 +12,14 @@ const fs = require('fs');
 const fsPromises = fs.promises;
 const jsyaml = require('js-yaml');
 const sanitize = require('sanitize-filename');
-const config = require('./public/config.json')
+const config = require('./client/config.json');
+const cors =require('cors');
 
 const port = 8083;
 
 app.use(express.static('public'));
 app.use(express.json());
+app.use(cors());
 
 app.get('/mapproxylist', (req, res) => {
     fsPromises.readdir(config.mapproxydir + '/projects/', {withFileTypes:true}).then(dir=>{

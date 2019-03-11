@@ -1,0 +1,7 @@
+{
+  "name": "mapproxyadmin",
+  "short_name": "mapproxyadmin",
+  "description": "Webadminstration for mapproxy",
+  "start_url": "/",
+  "display": "standalone"
+}
