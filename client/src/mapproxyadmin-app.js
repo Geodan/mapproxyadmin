@@ -1,5 +1,6 @@
 import {LitElement, html} from 'lit-element';
 import './mapproxy-list';
+import './mapproxy-new';
 
 /**
 * @polymer
@@ -8,18 +9,30 @@ import './mapproxy-list';
 class MapproxyAdminApp extends LitElement {
     static get properties() {
         return {
-            config: {type: Object}
+            config: {type: Object},
         };
     }
     constructor() {
         super();
         this.config = {};
+        this.error = {};
         fetch('./config.json')
-            .then(response=>response.json())
+            .then(response=>{
+                if (response.ok){
+                    return response.json()
+                } else {
+                    return {error: response.statusText}
+                }
+            })
             .then(json=>{this.config=json});
     }
     render(){
-        return html`<a href="config.html">Configuration</a><br>
+        if (this.config.error) {
+            return html`config.json: ${this.config.error}`;
+        }
+        
+        return html`
+        <mapproxy-new .config="${this.config}"></mapproxy-new>
         <mapproxy-list .config="${this.config}"></mapproxy-list>
         `;
     }

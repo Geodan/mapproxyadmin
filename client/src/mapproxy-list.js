@@ -1,4 +1,5 @@
 import {LitElement, html} from 'lit-element';
+import './mapproxy-item';
 
 /**
 * @polymer
@@ -8,22 +9,32 @@ class MapproxyList extends LitElement {
     static get properties() {
         return {
             config: {type: Object}, 
-            list: {type: Array}
+            list: {type: Array},
+            error: {type: String},
+            open: {type: Boolean}
         };
     }
     constructor() {
         super();
         this.config = {};
         this.list = [];
+        this.error = "";
     }
     shouldUpdate(changedProperties) {
         if (changedProperties.has('config')) {
             if (this.config.adminserver) {
                 fetch(this.config.adminserver + 'mapproxylist')
-                .then(response=>response.json())
+                .then(response=>{
+                    if (!response.ok) {
+                        throw Error(response.statusText);
+                    }
+                    return response.json()
+                })
                 .then(json=>{
                     this.list = json;
-                    //this.requestUpdate();
+                })
+                .catch(error=>{
+                    this.error = error;
                 });
             }
         }
@@ -33,7 +44,24 @@ class MapproxyList extends LitElement {
         return true;
     }
     render(){
-        return html`${this.list.map(item=>html`${item.name}<br>`)}`;
+        if (this.error !== "") {
+            return html`${this.config.adminserver + 'mapproxylist'}: ${this.error}`;
+        }
+        return html`<button @click="${e=>this.toggleOpen(e)}">List mapproxy configs...</button><br>
+        ${this.renderList()}`
+    }
+    renderList() {
+        if (!this.open) {
+            return html``;
+        }
+        return html`${this.list.map(item=>html`
+            <mapproxy-item .item="${item}" @itemdelete="${e=>this.deleteItem(e)}"></mapproxy-item><br>`)}`;
+    }
+    deleteItem(e) {
+        this.list = this.list.filter(item=>item.name!==e.detail);
+    }
+    toggleOpen(e) {
+        this.open = !this.open;
     }
 }
 
