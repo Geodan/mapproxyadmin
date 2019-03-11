@@ -12,7 +12,7 @@ const fs = require('fs');
 const fsPromises = fs.promises;
 const jsyaml = require('js-yaml');
 const sanitize = require('sanitize-filename');
-const config = require('./client/config.json');
+const config = require('./public/config.json');
 const cors =require('cors');
 
 const port = 8083;
