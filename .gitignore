@@ -1,5 +1,8 @@
 #private configuration
 config.json
+public/src
+client/build
+
 
 # Logs
 logs

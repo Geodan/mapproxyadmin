@@ -5,7 +5,7 @@ import './mapproxy-item';
 * @polymer
 * @extends HTMLElement
 */
-class MapproxyList extends LitElement {
+export class MapproxyList extends LitElement {
     static get properties() {
         return {
             config: {type: Object}, 
@@ -18,35 +18,8 @@ class MapproxyList extends LitElement {
         super();
         this.config = {};
         this.list = [];
-        this.error = "";
-    }
-    shouldUpdate(changedProperties) {
-        if (changedProperties.has('config')) {
-            if (this.config.adminserver) {
-                fetch(this.config.adminserver + 'mapproxylist')
-                .then(response=>{
-                    if (!response.ok) {
-                        throw Error(response.statusText);
-                    }
-                    return response.json()
-                })
-                .then(json=>{
-                    this.list = json;
-                })
-                .catch(error=>{
-                    this.error = error;
-                });
-            }
-        }
-        if (changedProperties.has('list')) {
-            console.log('list changed');
-        }
-        return true;
     }
     render(){
-        if (this.error !== "") {
-            return html`${this.config.adminserver + 'mapproxylist'}: ${this.error}`;
-        }
         return html`<button @click="${e=>this.toggleOpen(e)}">List mapproxy configs...</button><br>
         ${this.renderList()}`
     }
