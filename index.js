@@ -184,7 +184,7 @@ async function getcapabilities(wmsUrl) {
     const response = await axios.get(wmsUrl);       
     if (response.status >= 200 && response.status < 300) {
         const contentType = response.headers['content-type'];
-        if (contentType && contentType === 'application/vnd.ogc.wms_xml' || contentType.startsWith('text/xml') || contentType === 'application/xml') {
+        if (contentType && (contentType.startsWith('application/vnd.ogc.wms_xml') || contentType.startsWith('text/xml') || contentType.startsWith('application/xml'))) {
             const json = new WMSCapabilities(response.data, DOMParser).toJSON();
             if (!json.Capability) {
                 // invalid wms-capabilities
