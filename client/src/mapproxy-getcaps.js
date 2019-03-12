@@ -11,7 +11,9 @@ class MapproxyGetCaps extends LitElement {
         return {
             open: {type: Boolean},
             capabilities: {type: Object},
-            errorMessage: {type: String}
+            errorMessage: {type: String},
+            createButtonDisabled: {type: Boolean},
+            list: {type: Array}
         };
     }
     static get styles() {
@@ -31,10 +33,18 @@ class MapproxyGetCaps extends LitElement {
         this.errorMessage = "";
         this.getcapabilitiesurl = "";
         this.selectedLayers = new Set();
+        this.createButtonDisabled = true;
+        this.list = [];
+    }
+    shouldUpdate(changedProperties) {
+        if (changedProperties.has('list')) {
+            this.updateCreateButton();
+        }
+        return true;
     }
     render(){
         return html`
-            <button @click="${e=>this.toggleOpen()}">wms capabilities</button> Get layers from WMS capabilities<br>
+            <button @click="${e=>this.toggleOpen()}">create from wms capabilities</button> Get layers from WMS capabilities<br>
             ${this.renderGetCapabilitiesForm()}
             ${this.renderErrorMessage()}
             ${this.renderCapabilities()}
@@ -48,7 +58,7 @@ class MapproxyGetCaps extends LitElement {
             return html``;
         }
         return html`
-            <input type="text" name="wmscapabilitiesurl" size="128" value="${this.getcapabilitiesurl}" placeholder="HTTP(s) address of WMS service">
+            <input type="text" autocomplete="url" id="wmscapabilitiesurl" name="wmscapabilitiesurl" size="128" value="${this.getcapabilitiesurl}" placeholder="HTTP(s) address of WMS service">
             <button @click="${e=>this.fetchCapabilities(e)}">Get</button>
         `;
     }
@@ -78,6 +88,7 @@ class MapproxyGetCaps extends LitElement {
             <b>Contact mail</b>: ${this.capabilities.Service.ContactInformation.ContactElectronicMailAddress}<br>
             <b>Layers</b><br>
             ${this.renderLayers(this.capabilities.Capability.Layer)}
+            <input type="text" @input="${e=>this.checkInput(e)}" id="configname" size="20" value="" placeholder="mapproxy_config_name"> <button ?disabled="${this.createButtonDisabled}">Create</button>
             </div>
         `;
     }
@@ -99,12 +110,24 @@ class MapproxyGetCaps extends LitElement {
         }
         return Layer.map(layer=>html`${unsafeHTML("&nbsp;".repeat(depth))}${this.renderLayer(layer)}<br>${layer.Layer?this.renderLayers(layer.Layer, depth+1):''}`)
     }
+    updateCreateButton() {
+        if (this.selectedLayers.size === 0) {
+            this.createButtonDisabled = true;
+        } else {
+            const configname = this.shadowRoot.querySelector('#configname').value.trim().toLowerCase();            
+            this.createButtonDisabled = !(/^[a-z0-9][a-z0-9_-]*$/.test(configname) && this.list.find(item=>item.name.toLowerCase().replace(/\.yaml$/,'')===configname) === undefined)
+        }
+    }
+    checkInput(e) {
+        this.updateCreateButton();
+    }
     toggleCheck(layername) {
         if (this.selectedLayers.has(layername)) {
             this.selectedLayers.delete(layername);
         } else {
             this.selectedLayers.add(layername);
         }
+        this.updateCreateButton();
     }
     selectAllLayers(Layer) {
         if (!Array.isArray(Layer)) {
@@ -152,6 +175,7 @@ class MapproxyGetCaps extends LitElement {
 
 window.customElements.define('mapproxy-getcaps', MapproxyGetCaps);
 
+/* polyfill for String.repeat */
 if (!String.prototype.repeat) {
     String.prototype.repeat = function(count) {
       'use strict';

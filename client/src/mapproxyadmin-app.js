@@ -42,7 +42,7 @@ class MapproxyAdminApp extends LitElement {
         }
         return html`
         <mapproxy-new .config="${this.config}" .list=${this.list}></mapproxy-new>
-        <mapproxy-list .config="${this.config}" .list=${this.list}></mapproxy-list>
+        <mapproxy-list .config="${this.config}" .list=${this.list} @itemdelete="${e=>this.deleteItem(e)}"></mapproxy-list>
         `;
     }
     fetchList(adminserver) {
@@ -54,7 +54,9 @@ class MapproxyAdminApp extends LitElement {
                 return response.json()
             })
     }
-    
+    deleteItem(e) {
+        this.list = this.list.filter(item=>item.name!==e.detail);
+    }
 }
 
 window.customElements.define('mapproxyadmin-app', MapproxyAdminApp);

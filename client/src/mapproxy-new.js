@@ -11,13 +11,14 @@ class MapproxyNew extends LitElement {
     static get properties() {
         return {
             config: {type: Object},
-            open: {type: Boolean}
+            open: {type: Boolean},
+            list: {type: Array}
         };
     }
     static get styles() {
         return css `
             :host {
-                display: block;                
+                display: block;
             }
         `
     }
@@ -38,7 +39,7 @@ class MapproxyNew extends LitElement {
         }
         return html`
             <mapproxy-config .config="${this.config}"></mapproxy-config>
-            <mapproxy-getcaps></mapproxy-getcaps>
+            <mapproxy-getcaps .list="${this.list}"></mapproxy-getcaps>
             `
     }
     toggleOpen(e) {

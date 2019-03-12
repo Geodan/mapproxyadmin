@@ -35,7 +35,7 @@ class MapproxyConfig extends LitElement {
         return true;
     }
     render(){
-        return html`<button @click="${e=>this.toggleOpen(e)}">Metadata</button><br>
+        return html`<button @click="${e=>this.toggleOpen(e)}">Edit metadata</button><br>
             ${this.configForm()}
             `
     }

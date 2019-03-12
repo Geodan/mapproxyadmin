@@ -28,10 +28,7 @@ export class MapproxyList extends LitElement {
             return html``;
         }
         return html`${this.list.map(item=>html`
-            <mapproxy-item .item="${item}" @itemdelete="${e=>this.deleteItem(e)}"></mapproxy-item><br>`)}`;
-    }
-    deleteItem(e) {
-        this.list = this.list.filter(item=>item.name!==e.detail);
+            <mapproxy-item .item="${item}"></mapproxy-item><br>`)}`;
     }
     toggleOpen(e) {
         this.open = !this.open;
