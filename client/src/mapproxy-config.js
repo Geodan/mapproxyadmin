@@ -74,6 +74,12 @@ class MapproxyConfig extends LitElement {
     toggleOpen(e) {
         this.open = !this.open;
     }
+    emitLocalConfigUpdate() {
+        this.dispatchEvent(new CustomEvent('localConfigUpdate', {
+            bubbles: true,
+            composed: true
+        }));
+    }
     saveConfig() {
         this.localConfig.mapproxydir = this.shadowRoot.querySelector('#mapproxydir').value;
         this.localConfig.metadata.online_resource = this.shadowRoot.querySelector('#online_resource').value;
@@ -87,10 +93,12 @@ class MapproxyConfig extends LitElement {
         this.localConfig.metadata.contact.country = this.shadowRoot.querySelector('#country').value;
         this.localConfig.metadata.contact.email = this.shadowRoot.querySelector('#email').value;
         window.localStorage.config = JSON.stringify(this.localConfig);
+        this.emitLocalConfigUpdate();
     }
     resetConfig() {
         window.localStorage.config = JSON.stringify(this.config);
         this.localConfig = JSON.parse(window.localStorage.config);
+        this.emitLocalConfigUpdate();
     }
 }
 

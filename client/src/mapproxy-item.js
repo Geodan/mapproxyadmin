@@ -10,7 +10,8 @@ class MapproxyItem extends LitElement {
     static get properties() {
         return {
             item: {type: Object},
-            open: {type: Boolean}
+            open: {type: Boolean},
+            localConfig: {type: Object}
         };
     }
     static get styles() {
@@ -26,6 +27,7 @@ class MapproxyItem extends LitElement {
     constructor() {
         super();
         this.item = {};
+        this.localConfig = {};
         this.itemname = ""
     }
     shouldUpdate(changedProperties) {
@@ -36,15 +38,16 @@ class MapproxyItem extends LitElement {
     }
     
     render(){
+        
         if (this.item.name) {
             return html`
-                ${this.itemname}
+                <a href="${this.localConfig.metadata.online_resource}/${this.itemname}/demo" target="mapproxypreview">${this.itemname}</a>
                 <button @click="${(e)=>this.toggleOpen(e)}">${this.open?'close':'open'}</button>
                 <button @click="${e=>this.deleteItem(e)}">delete</button>
                 ${this.open?html`<div class="iteminfo">
                     <b>services</b>: ${Object.keys(this.item.config.services).map(key=>html`${key} `)}<br>
                     <b>metadata</b>:<br>${this.htmlTree(this.item.config.services.wms.md)}
-                    <b>layers</b>:<br>${this.item.config.layers.map(layer=>html`<mapproxy-layer .itemname="${this.item.name}" .layer="${layer}"></mapproxy-layer>`)}
+                    <b>layers</b>:<br>${this.item.config.layers.map(layer=>html`<mapproxy-layer .itemname="${this.itemname}" .layer="${layer}" .localConfig="${this.localConfig}"></mapproxy-layer>`)}
                     </div>
                     `
                     :''}

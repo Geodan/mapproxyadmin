@@ -1,6 +1,132 @@
 import {LitElement, html, css} from 'lit-element';
 import { unsafeHTML } from 'lit-html/directives/unsafe-html.js'
 
+function quote(str) {
+    return str.replace(/'/g,"''").replace(/[\r\n]+/g,"\\n");
+}
+
+function escape(name) {
+    return quote(name.replace(/ /g, '_').replace(/:/g, '_'))
+}
+
+
+function pathJoin(parts, sep){
+    var separator = sep || '/';
+    var replace   = new RegExp(separator+'{1,}', 'g');
+    return parts.join(separator).replace(replace, separator);
+ }
+
+ function layerSRS(layer) {
+    let srs = layer.SRS.find(srs=>srs==='EPSG:3857');
+    if (!srs) {
+        // find first projected SRS
+        srs = layer.SRS.find(srs=>srs !== 'CRS:84' && srs !== 'EPSG:4326');
+    }
+    if (!srs) {
+        srs = layer.SRS.find(srs=>srs==='EPSG:4326');
+    }
+    if (!srs) {
+        srs = layer.SRS.length ? layer.SRS[0] : 'EPSG:3857';
+    }
+    return srs;
+}
+
+const mapproxyConfigTemplate = {
+    "services": {
+        "demo":null,
+        "tms":null,
+        "wmts":null,
+        "wms": {
+            "srs":["EPSG:3857", "EPSG:25831","EPSG:25832","EPSG:28992","EPSG:900913"],
+            "image_formats":["image/jpeg","image/png"],
+            "md":{
+                "title":"<fill>",
+                "abstract":"<fill>",
+                "online_resource":"<fill>",
+                "contact":{
+                    "person":"<fill>",
+                    "position":"<fill>",
+                    "email":"<fill>"
+                },
+                "access_constraints":"<fill>",
+                "fees":"<fill>"
+            }
+        }
+    },
+    "layers":[
+        {
+            "name":"adm_provincies_2005",
+            "title":"provincies",
+            "sources":["adm_provincies_2005_cache"],
+            "max_res":1.395617026009885,
+            "min_res":3907.72767282768
+        }
+    ],
+    "caches":{
+        "adm_provincies_2005_cache":{
+            "grids":["spherical_mercator"],
+            "sources":["adm_provincies_2005_wms"],
+            "format":"image/png",
+            "disable_storage":false,
+            "cache": {
+                "type": "sqlite"
+            }
+        }
+    },
+    "sources":{
+        "adm_provincies_2005_wms":{
+            "type":"wms",
+            "wms_opts":{
+                "featureinfo":true,
+                "legendgraphic":true
+            },
+            "supported_srs":["EPSG:28992"],
+            "req":{
+                "url":"http://mapserver.edugis.nl/cgi-bin/mapserv?map=maps/edugis/cache/adm_grenzen_2005.map&",
+                "layers":"adm_provincies_2005",
+                "transparent":true
+            },
+            "coverage":{
+                "bbox":[3.20009,50.7167,7.27283,53.5571],
+                "bbox_srs":"EPSG:4326"
+            },
+            "max_res":1.395617026009885,
+            "min_res":3907.72767282768
+        }
+    },
+    "grids":{
+        "global_geodetic_sqrt2":{
+            "base":"GLOBAL_GEODETIC",
+            "res_factor":"sqrt2"
+        },
+        "spherical_mercator":{
+            "base":"GLOBAL_MERCATOR",
+            "tile_size":[256,256],
+            "srs":"EPSG:3857"
+        },
+        "nltilingschema":{
+            "tile_size":[256,256],
+            "srs":"EPSG:28992",
+            "bbox":[-285401.92,22598.08,595401.92,903401.92],
+            "bbox_srs":"EPSG:28992",
+            "min_res":3440.64,
+            "max_res":0.21,
+            "origin":"sw"
+        }
+    },
+    "globals":{
+        "cache":{
+            "meta_buffer":200,
+            "meta_size":[4,4],
+            "base_dir":"/home/anneb/project/mapproxy/mp",
+            "lock_dir":"/home/anneb/project/mapproxy/mplocks"
+        },
+        "image":{
+            "resampling_method":"bicubic"
+        }
+    }
+}
+
 
 /**
 * @polymer
@@ -82,19 +208,19 @@ class MapproxyGetCaps extends LitElement {
             <b>Access constraints</b>: ${this.capabilities.Service.AccessConstraints}<br>
             <b>Fees</b>: ${this.capabilities.Service.Fees?this.capabilities.Service.Fees:''}<br>
             <b>Contact information</b><br>
-            <b>Primary contact</b>: ${this.capabilities.Service.ContactInformation.ContactPersonPrimary.ContactPerson}<br>
-            <b>Primary contact organisation</b>: ${this.capabilities.Service.ContactInformation.ContactPersonPrimary.ContactOrganization}<br>
-            <b>Contact voice telephone</b>: ${this.capabilities.Service.ContactInformation.ContactVoiceTelephone}<br>
-            <b>Contact mail</b>: ${this.capabilities.Service.ContactInformation.ContactElectronicMailAddress}<br>
+            <b>Primary contact</b>: ${(((this.capabilities.Service.ContactInformation || "").ContactPersonPrimary || "").ContactPerson||"")}<br>
+            <b>Primary contact organization</b>: ${(((this.capabilities.Service.ContactInformation || "").ContactPersonPrimary || "").ContactOrganization||"")}<br>
+            <b>Contact voice telephone</b>: ${(((this.capabilities.Service.ContactInformation || "").ContactPersonPrimary || "").ContactVoiceTelephone||"")}<br>
+            <b>Contact mail</b>: ${(((this.capabilities.Service.ContactInformation || "").ContactPersonPrimary || "").ContactElectronicMailAddress||"")}<br>
             <b>Layers</b><br>
             ${this.renderLayers(this.capabilities.Capability.Layer)}
-            <input type="text" @input="${e=>this.checkInput(e)}" id="configname" size="20" value="" placeholder="mapproxy_config_name"> <button ?disabled="${this.createButtonDisabled}">Create</button>
+            <input type="text" @input="${e=>this.checkInput(e)}" id="configname" size="20" value="" placeholder="mapproxy_config_name"> <button ?disabled="${this.createButtonDisabled}" @click="${e=>this.createMapproxyConfig()}">Create</button>
             </div>
         `;
     }
     renderLayer(layer) {
         if (layer.Name) {
-            return html`<input type="checkbox" ?checked="${this.selectedLayers.has(layer.Name)}" @click="${e=>this.toggleCheck(layer.Name)}"> ${layer.Name}${layer.Title?`, ${layer.Title}`:''}`;
+            return html`<input id="${layer.Name}" type="checkbox" ?checked="${this.selectedLayers.has(layer.Name)}" @click="${e=>this.toggleCheck(layer.Name)}"><label for="${layer.Name}">${layer.Name}</label>, ${layer.Name}${layer.Title?`, ${layer.Title}`:''}`;
         }
         if (layer.Title) {
             return html`${layer.Title}`;
@@ -114,7 +240,7 @@ class MapproxyGetCaps extends LitElement {
         if (this.selectedLayers.size === 0) {
             this.createButtonDisabled = true;
         } else {
-            const configname = this.shadowRoot.querySelector('#configname').value.trim().toLowerCase();            
+            const configname = this.shadowRoot.querySelector('#configname').value.trim().toLowerCase();
             this.createButtonDisabled = !(/^[a-z0-9][a-z0-9_-]*$/.test(configname) && this.list.find(item=>item.name.toLowerCase().replace(/\.yaml$/,'')===configname) === undefined)
         }
     }
@@ -169,6 +295,144 @@ class MapproxyGetCaps extends LitElement {
                     this.capabilities = {};
                     this.errorMessage = error;
                 })
+        }
+    }
+    getCapabilitiesLayer(Layer, layername) {
+        let result = undefined;
+        if (!Array.isArray(Layer)) {
+            Layer = [Layer];
+        }
+        // first look for sublayers
+        Layer.forEach(layer=>{
+            if (!result) {
+                if (layer.Layer) {
+                    result = this.getCapabilitiesLayer(layer.Layer, layername);
+                }
+            }
+        })
+        if (!result) {
+            Layer.forEach(layer=>{
+                if (!result) {
+                    if (layer.Name === layername) {
+                        result = layer;
+                    }
+                }
+            })
+        }
+        return result;
+    }
+    createMapproxyConfig() {
+        const configname = this.shadowRoot.querySelector('#configname').value.trim().toLowerCase();
+        const localConfig = JSON.parse(window.localStorage.config);
+        const selectedLayers = Array.from(this.selectedLayers).map(layername=>this.getCapabilitiesLayer(this.capabilities.Capability.Layer, layername));
+        const config = {
+            "services": {
+                "demo":null,
+                "tms":null,
+                "wmts":null,
+                "wms": {
+                    "srs":["EPSG:3857", "EPSG:25831","EPSG:25832","EPSG:28992","EPSG:900913"],
+                    "image_formats":["image/jpeg","image/png"],
+                    "md":{
+                        "title": this.capabilities.Service.Title,
+                        "abstract": this.capabilities.Service.Abstract,
+                        "online_resource": pathJoin([localConfig.metadata.online_resource, configname]),
+                        "contact":{
+                            "person":localConfig.metadata.contact.person,
+                            "position":localConfig.metadata.contact.position,
+                            "organization": localConfig.metadata.contact.organization,
+                            "postcode": localConfig.metadata.contact.postcode,
+                            "email":localConfig.metadata.contact.email,
+                            "city": localConfig.metadata.contact.city,
+                            "country": localConfig.metadata.contact.country
+                        },
+                        "access_constraints":localConfig.metadata.access_constraints,
+                        "fees":localConfig.metadata.fees
+                    }
+                }
+            },
+            "layers":selectedLayers.map(layer=>{
+                const result = {
+                    name: escape(layer.Name),
+                    title: layer.Title,
+                    sources: [escape(layer.Name) + "_cache"]
+                }
+                if (layer.Abstract && layer.Abstract !== "") {
+                    result.abstract = layer.Abstract;
+                }
+                if (layer.ScaleHint && layer.ScaleHint.min) {
+                    result.max_res = layer.ScaleHint.min / 1.4142;
+                }
+                if (layer.ScaleHint && layer.ScaleHint.max) {
+                    result.min_res = layer.ScaleHint.max / 1.4142;
+                }
+                return result;
+            }),
+            "caches":selectedLayers.reduce((result, layer)=>{
+                result[escape(layer.Name) + "_cache"] = {
+                    grids: ['spherical_mercator'],
+                    sources: [escape(layer.Name) + "_wms"],
+                    format: "image/png",
+                    disable_storage: false,
+                    cache: {
+                        type: "sqlite"
+                    }
+                }
+                return result;
+            }, {}),
+            "sources":selectedLayers.reduce((result, layer)=>{
+                result[escape(layer.Name) + "_wms"] = {
+                    type: "wms",
+                    wms_opts: {
+                        featureinfo: layer.queryable,
+                        legendgraphic: true
+                    },
+                    supported_srs: [layerSRS(layer)],
+                    req: {
+                        url: this.capabilities.Capability.Request.GetMap.DCPType[0].HTTP.Get.OnlineResource,
+                        layers: layer.Name,
+                        transparent: true
+                    }
+                }
+                if (layer.LatLonBoundingBox) {
+                    result[escape(layer.Name) + "_wms"].coverage = {
+                        bbox: [layer.LatLonBoundingBox.join(',')],
+                        bbox_srs: 'EPSG:4326'
+                    }
+                }
+                return result;
+            }, {}),
+            "grids":{
+                "global_geodetic_sqrt2":{
+                    "base":"GLOBAL_GEODETIC",
+                    "res_factor":"sqrt2"
+                },
+                "spherical_mercator":{
+                    "base":"GLOBAL_MERCATOR",
+                    "tile_size":[256,256],
+                    "srs":"EPSG:3857"
+                },
+                "nltilingschema":{
+                    "tile_size":[256,256],
+                    "srs":"EPSG:28992",
+                    "bbox":[-285401.92,22598.08,595401.92,903401.92],
+                    "bbox_srs":"EPSG:28992",
+                    "min_res":3440.64,
+                    "max_res":0.21,
+                    "origin":"sw"
+                }
+            },
+            "globals":{
+                "cache":{
+                    "meta_buffer":200,
+                    "meta_size":[4,4],
+                    "base_dir":pathJoin([localConfig.mapproxydir,"mp",configname]),
+                    "lock_dir":"/home/anneb/project/mapproxy/mplocks"
+                },
+                "image":{
+                    "resampling_method":"bicubic"
+                }
+            }
         }
     }
 }

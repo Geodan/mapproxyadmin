@@ -11,12 +11,14 @@ export class MapproxyList extends LitElement {
             config: {type: Object}, 
             list: {type: Array},
             error: {type: String},
-            open: {type: Boolean}
+            open: {type: Boolean},
+            localConfig: {type: Object}
         };
     }
     constructor() {
         super();
         this.config = {};
+        this.localConfig = {};
         this.list = [];
     }
     render(){
@@ -28,7 +30,7 @@ export class MapproxyList extends LitElement {
             return html``;
         }
         return html`${this.list.map(item=>html`
-            <mapproxy-item .item="${item}"></mapproxy-item><br>`)}`;
+            <mapproxy-item .item="${item}" .localConfig="${this.localConfig}"></mapproxy-item><br>`)}`;
     }
     toggleOpen(e) {
         this.open = !this.open;

@@ -10,6 +10,7 @@ class MapproxyAdminApp extends LitElement {
     static get properties() {
         return {
             config: {type: Object},
+            localConfig: {type: Object},
             list: {type: Array}
         };
     }
@@ -27,7 +28,11 @@ class MapproxyAdminApp extends LitElement {
                 }
             })
             .then(json=>{
-                this.config=json;
+                this.config = json;
+                if (!window.localStorage.config) {
+                    window.localStorage.config = JSON.stringify(json);
+                }
+                this.localConfig = JSON.parse(window.localStorage.config);
                 this.fetchList(this.config.adminserver)
                     .then(json=>this.list = json)
                     .catch(error=>this.error = JSON.stringify(error));
@@ -41,8 +46,8 @@ class MapproxyAdminApp extends LitElement {
             return html`${this.config.adminserver + 'mapproxylist'}: ${this.error}`;
         }
         return html`
-        <mapproxy-new .config="${this.config}" .list=${this.list}></mapproxy-new>
-        <mapproxy-list .config="${this.config}" .list=${this.list} @itemdelete="${e=>this.deleteItem(e)}"></mapproxy-list>
+        <mapproxy-new .config="${this.config}" .list=${this.list} @localConfigUpdate="${e=>this.localConfigUpdate(e)}"></mapproxy-new>
+        <mapproxy-list .config="${this.config}" .list=${this.list} .localConfig="${this.localConfig}" @itemdelete="${e=>this.deleteItem(e)}"></mapproxy-list>
         `;
     }
     fetchList(adminserver) {
@@ -56,6 +61,9 @@ class MapproxyAdminApp extends LitElement {
     }
     deleteItem(e) {
         this.list = this.list.filter(item=>item.name!==e.detail);
+    }
+    localConfigUpdate() {
+        this.localConfig = JSON.parse(window.localStorage.config);
     }
 }
 

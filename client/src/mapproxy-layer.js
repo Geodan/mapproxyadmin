@@ -7,25 +7,26 @@ import {LitElement, html, css} from 'lit-element';
 class MapproxyLayer extends LitElement {
     static get properties() {
         return {
-            item: {type: Object},
-            layer: {type: Object}
+            itemname: {type: String},
+            layer: {type: Object},
+            localConfig: {type: Object}
         };
     }
     static get styles() {
         return css `
             :host {
-                display: block;                
+                display: block;
             }
         `
     }
     constructor() {
         super();
-        this.item = {};
-        this.layer = {};        
+        this.itemname = "";
+        this.layer = {};
     }
     render(){
         return html`
-            ${this.layer.name} <button>clear cache</button>
+            <a href="${this.localConfig.metadata.online_resource}/${this.itemname}/demo/?srs=EPSG%3A3857&format=image%2Fpng&wms_layer=${this.layer.name}" target="mapproxypreview">${this.layer.name}</a> <button>clear cache</button>
             `
     }
 }
