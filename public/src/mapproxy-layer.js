@@ -7,10 +7,13 @@ import { LitElement, html, css } from "../node_modules/lit-element/lit-element.j
 class MapproxyLayer extends LitElement {
   static get properties() {
     return {
-      item: {
-        type: Object
+      itemname: {
+        type: String
       },
       layer: {
+        type: Object
+      },
+      localConfig: {
         type: Object
       }
     };
@@ -19,20 +22,20 @@ class MapproxyLayer extends LitElement {
   static get styles() {
     return css`
             :host {
-                display: block;                
+                display: block;
             }
         `;
   }
 
   constructor() {
     super();
-    this.item = {};
+    this.itemname = "";
     this.layer = {};
   }
 
   render() {
     return html`
-            ${this.layer.name} <button>clear cache</button>
+            <a href="${this.localConfig.metadata.online_resource}/${this.itemname}/demo/?srs=EPSG%3A3857&format=image%2Fpng&wms_layer=${this.layer.name}" target="mapproxypreview">${this.layer.name}</a> <button>clear cache</button>
             `;
   }
 
