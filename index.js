@@ -18,7 +18,7 @@ const cors =require('cors');
 const port = 8083;
 
 app.use(express.static('public'));
-app.use(express.json());
+app.use(express.json({limit:'5mb'}));
 app.use(cors());
 
 app.get('/mapproxylist', (req, res) => {
