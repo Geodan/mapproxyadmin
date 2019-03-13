@@ -12,8 +12,17 @@ function escape(name) {
 
 function pathJoin(parts, sep){
     var separator = sep || '/';
-    var replace   = new RegExp(separator+'{1,}', 'g');
-    return parts.join(separator).replace(replace, separator);
+    parts = parts.map((part, index)=>{
+        if (index) {
+            part = part.replace(new RegExp('^' + separator), '');
+        }
+        if (index != parts.length - 1) {
+            part = part.replace(new RegExp(separator + '$'), '');
+        }
+        return part;
+    })
+    //var replace   = new RegExp(separator+'{1,}', 'g');
+    return parts.join(separator); //.replace(replace, separator);
  }
 
  function layerSRS(layer) {
@@ -30,103 +39,6 @@ function pathJoin(parts, sep){
     }
     return srs;
 }
-
-const mapproxyConfigTemplate = {
-    "services": {
-        "demo":null,
-        "tms":null,
-        "wmts":null,
-        "wms": {
-            "srs":["EPSG:3857", "EPSG:25831","EPSG:25832","EPSG:28992","EPSG:900913"],
-            "image_formats":["image/jpeg","image/png"],
-            "md":{
-                "title":"<fill>",
-                "abstract":"<fill>",
-                "online_resource":"<fill>",
-                "contact":{
-                    "person":"<fill>",
-                    "position":"<fill>",
-                    "email":"<fill>"
-                },
-                "access_constraints":"<fill>",
-                "fees":"<fill>"
-            }
-        }
-    },
-    "layers":[
-        {
-            "name":"adm_provincies_2005",
-            "title":"provincies",
-            "sources":["adm_provincies_2005_cache"],
-            "max_res":1.395617026009885,
-            "min_res":3907.72767282768
-        }
-    ],
-    "caches":{
-        "adm_provincies_2005_cache":{
-            "grids":["spherical_mercator"],
-            "sources":["adm_provincies_2005_wms"],
-            "format":"image/png",
-            "disable_storage":false,
-            "cache": {
-                "type": "sqlite"
-            }
-        }
-    },
-    "sources":{
-        "adm_provincies_2005_wms":{
-            "type":"wms",
-            "wms_opts":{
-                "featureinfo":true,
-                "legendgraphic":true
-            },
-            "supported_srs":["EPSG:28992"],
-            "req":{
-                "url":"http://mapserver.edugis.nl/cgi-bin/mapserv?map=maps/edugis/cache/adm_grenzen_2005.map&",
-                "layers":"adm_provincies_2005",
-                "transparent":true
-            },
-            "coverage":{
-                "bbox":[3.20009,50.7167,7.27283,53.5571],
-                "bbox_srs":"EPSG:4326"
-            },
-            "max_res":1.395617026009885,
-            "min_res":3907.72767282768
-        }
-    },
-    "grids":{
-        "global_geodetic_sqrt2":{
-            "base":"GLOBAL_GEODETIC",
-            "res_factor":"sqrt2"
-        },
-        "spherical_mercator":{
-            "base":"GLOBAL_MERCATOR",
-            "tile_size":[256,256],
-            "srs":"EPSG:3857"
-        },
-        "nltilingschema":{
-            "tile_size":[256,256],
-            "srs":"EPSG:28992",
-            "bbox":[-285401.92,22598.08,595401.92,903401.92],
-            "bbox_srs":"EPSG:28992",
-            "min_res":3440.64,
-            "max_res":0.21,
-            "origin":"sw"
-        }
-    },
-    "globals":{
-        "cache":{
-            "meta_buffer":200,
-            "meta_size":[4,4],
-            "base_dir":"/home/anneb/project/mapproxy/mp",
-            "lock_dir":"/home/anneb/project/mapproxy/mplocks"
-        },
-        "image":{
-            "resampling_method":"bicubic"
-        }
-    }
-}
-
 
 /**
 * @polymer
@@ -321,6 +233,19 @@ class MapproxyGetCaps extends LitElement {
         }
         return result;
     }
+    postMapproxyConfig(adminserver, configname, config) {
+        const url = pathJoin([adminserver, "mapproxyupdate", configname+".yaml"]);
+        return fetch(url, {
+            method: 'POST',
+            mode: 'cors',
+            headers: {
+                "Content-Type": "application/json"
+            },
+            redirect: "follow",
+            referrer: "client",
+            body: JSON.stringify(config)
+        })
+    }
     createMapproxyConfig() {
         const configname = this.shadowRoot.querySelector('#configname').value.trim().toLowerCase();
         const localConfig = JSON.parse(window.localStorage.config);
@@ -395,9 +320,19 @@ class MapproxyGetCaps extends LitElement {
                     }
                 }
                 if (layer.LatLonBoundingBox) {
-                    result[escape(layer.Name) + "_wms"].coverage = {
-                        bbox: [layer.LatLonBoundingBox.join(',')],
-                        bbox_srs: 'EPSG:4326'
+                    if (layer.LatLonBoundingBox[0] < -180 || layer.LatLonBoundingBox[0] > 180 || layer.LatLonBoundingBox[2] < -180 || layer.LatLonBoundingBox[2] > 180
+                        || layer.LatLonBoundingBox[1] < -90 || layer.LatLonBoundingBox[1] > 90 || layer.LatLonBoundingBox[3] < -90 || layer.LatLonBoundingBox[3] > 90) {
+                        // invalid latlonbbox
+                        // temp: try 28992
+                        result[escape(layer.Name) + "_wms"].coverage = {
+                            bbox: layer.LatLonBoundingBox,
+                            bbox_srs: 'EPSG:28992'
+                        }
+                    } else {
+                        result[escape(layer.Name) + "_wms"].coverage = {
+                            bbox: layer.LatLonBoundingBox,
+                            bbox_srs: 'EPSG:4326'
+                        }
                     }
                 }
                 return result;
@@ -434,6 +369,7 @@ class MapproxyGetCaps extends LitElement {
                 }
             }
         }
+        this.postMapproxyConfig(localConfig.adminserver, configname, config);
     }
 }
 
