@@ -36,7 +36,7 @@ class MapproxyGetCaps extends LitElement {
             capabilities: {type: Object},
             errorMessage: {type: String},
             createButtonDisabled: {type: Boolean},
-            list: {type: Array}
+            list: {type: Array},
         };
     }
     static get styles() {
@@ -110,6 +110,7 @@ class MapproxyGetCaps extends LitElement {
             <b>Contact voice telephone</b>: ${(((this.capabilities.Service.ContactInformation || "").ContactPersonPrimary || "").ContactVoiceTelephone||"")}<br>
             <b>Contact mail</b>: ${(((this.capabilities.Service.ContactInformation || "").ContactPersonPrimary || "").ContactElectronicMailAddress||"")}<br>
             <b>Layers</b><br>
+            <input type="checkbox" id="allchecks" @click="${e=>this.toggleAllChecks(e)}" checked><Label for="allchecks">(un-)select all layers</Label><br>
             ${this.renderLayers(this.capabilities.Capability.Layer)}
             <input type="text" @input="${e=>this.checkInput(e)}" id="configname" size="20" value="" placeholder="mapproxy_config_name"> <button ?disabled="${this.createButtonDisabled}" @click="${e=>this.createMapproxyConfig()}">Create</button>
             </div>
@@ -117,7 +118,7 @@ class MapproxyGetCaps extends LitElement {
     }
     renderLayer(layer) {
         if (layer.Name) {
-            return html`<input id="${layer.Name}" type="checkbox" ?checked="${this.selectedLayers.has(layer.Name)}" @click="${e=>this.toggleCheck(layer.Name)}"><label for="${layer.Name}">${layer.Name}</label>, ${layer.Name}${layer.Title?`, ${layer.Title}`:''}`;
+            return html`<input id="${layer.Name}" type="checkbox" ?checked="${this.selectedLayers.has(layer.Name)}" @change="${e=>this.toggleCheck(layer.Name)}"><label for="${layer.Name}">${layer.Name}</label>, ${layer.Name}${layer.Title?`, ${layer.Title}`:''}`;
         }
         if (layer.Title) {
             return html`${layer.Title}`;
@@ -151,6 +152,15 @@ class MapproxyGetCaps extends LitElement {
             this.selectedLayers.add(layername);
         }
         this.updateCreateButton();
+    }
+    toggleAllChecks(e) {
+        const checkboxes = [...this.shadowRoot.querySelectorAll('input[type="checkbox"]')];
+        checkboxes.forEach(checkbox=>{
+            if(checkbox.checked!==e.target.checked) {
+                checkbox.checked = e.target.checked;
+                this.toggleCheck(checkbox.getAttribute('id'));
+            }
+        })
     }
     selectAllLayers(Layer) {
         if (!Array.isArray(Layer)) {
