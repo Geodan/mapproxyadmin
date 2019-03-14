@@ -60,7 +60,7 @@ class MapproxyItem extends LitElement {
         this.open = !this.open;
     }
     deleteItem(e) {
-        if (confirm('permanently delete: ' + this.item.name + '?')) {
+        if (confirm('permanently delete: ' + this.item.name + ' from server?')) {
             this.dispatchEvent(new CustomEvent('itemdelete', {
                 detail: this.item.name,
                 bubbles: true,

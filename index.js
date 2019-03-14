@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 
 const createWmsUrl = require('./wmsurl.js');
 //const DOMParser = global.DOMParser = require('xmldom').DOMParser;
@@ -70,7 +71,7 @@ function trashFile(name, number) {
 app.get('/mapproxydelete/:mpconfig', (req, res) => {
     const mpconfig = sanitize(req.params.mpconfig);
     if (!fs.existsSync(config.mapproxydir + 'projects/' + mpconfig)) {
-        res.json({name: mpconfig, result: 'file does not exist'});
+        res.json({name: mpconfig, error: 'file does not exist'});
         return;
     }
     fsPromises.mkdir(config.mapproxydir + 'projects/trash')
@@ -96,7 +97,14 @@ app.get('/mapproxyclearcache/:mpconfig/:cachename', (req, res) => {
             res.json(result);
         } else {
             const caches = result.result;
-            res.json({name: mpconfig, result: caches});
+            if (caches.length) {
+                Promise.all(caches.map(path=>{
+                    return deleteFolderRecursive(path)
+                }))
+                .then(res.json({name: mpconfig, result: caches}))
+            } else {
+                res.json({name: mpconfig, error: 'cache not found'});
+            }
         }
     }).catch(err=>{
         res.json({name:mpconfig, error: err});
@@ -108,6 +116,7 @@ function getCachePaths(mpconfig, cachename) {
         if (json.error) {
             return json;
         }
+        cachename += '_cache';
         if (!json.config.caches.hasOwnProperty(cachename)) {
             return {name: mpconfig, error: `${cachename} not in ${mpconfig}`}
         }
@@ -244,6 +253,18 @@ function layerSRS(layer) {
     }
     return srs;
 }
+
+const deleteFolderRecursive = async path =>  {
+    if (fs.existsSync(path)) {
+        for (let entry of await fsPromises.readdir(path)) {
+            const curPath = path + "/" + entry;
+            if ((await fsPromises.lstat(curPath)).isDirectory())
+                await deleteFolderRecursive(curPath);
+            else await fsPromises.unlink(curPath);
+        }
+        await fsPromises.rmdir(path);
+    }
+};
 
 function isValidProxyLayer(layer) {
     if (!layer.Name) {

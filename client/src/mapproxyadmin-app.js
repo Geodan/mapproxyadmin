@@ -1,6 +1,7 @@
 import {LitElement, html} from 'lit-element';
 import './mapproxy-list';
 import './mapproxy-new';
+import { pathJoin } from './util.js';
 
 /**
 * @polymer
@@ -60,7 +61,19 @@ class MapproxyAdminApp extends LitElement {
             })
     }
     deleteItem(e) {
-        this.list = this.list.filter(item=>item.name!==e.detail);
+        const configName = e.detail;
+        const url = pathJoin([this.localConfig.adminserver, 'mapproxydelete', configName]);
+        fetch(url).then(response=>{
+            if (!response.ok) {
+                throw (Error(response.statusText));
+            }
+            return response.json();            
+        }).then(json=>{
+            if (json.error) {
+                throw (Error(json.error));
+            }
+            this.list = this.list.filter(item=>item.name!==configName);
+        })
     }
     localConfigUpdate() {
         this.localConfig = JSON.parse(window.localStorage.config);

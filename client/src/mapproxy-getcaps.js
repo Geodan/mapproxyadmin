@@ -1,5 +1,6 @@
 import {LitElement, html, css} from 'lit-element';
 import { unsafeHTML } from 'lit-html/directives/unsafe-html.js'
+import { pathJoin } from './util.js'
 
 function quote(str) {
     return str.replace(/'/g,"''").replace(/[\r\n]+/g,"\\n");
@@ -9,23 +10,7 @@ function escape(name) {
     return quote(name.replace(/ /g, '_').replace(/:/g, '_'))
 }
 
-
-function pathJoin(parts, sep){
-    var separator = sep || '/';
-    parts = parts.map((part, index)=>{
-        if (index) {
-            part = part.replace(new RegExp('^' + separator), '');
-        }
-        if (index != parts.length - 1) {
-            part = part.replace(new RegExp(separator + '$'), '');
-        }
-        return part;
-    })
-    //var replace   = new RegExp(separator+'{1,}', 'g');
-    return parts.join(separator); //.replace(replace, separator);
- }
-
- function layerSRS(layer) {
+function layerSRS(layer) {
     let srs = layer.SRS.find(srs=>srs==='EPSG:3857');
     if (!srs) {
         // find first projected SRS
