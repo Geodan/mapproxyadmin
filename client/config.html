@@ -7,7 +7,7 @@
     <title>Config</title>
     <script>
     function getDefaultConfig(){
-        return fetch('./config.json').then(response=>response.json()).then(json=>{
+        return fetch('./client_config.json').then(response=>response.json()).then(json=>{
             return json;
         })
     }

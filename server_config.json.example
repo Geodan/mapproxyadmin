@@ -1,0 +1,5 @@
+{
+    "mapproxydir" : "/path/to/root/of/mapproxy",
+    "mapproxy_projects": "projects",
+    "mapproxy_cache": "mp"
+}
