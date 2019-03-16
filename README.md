@@ -17,7 +17,7 @@ The MapProxy configuration is defined in yaml files. This project, MapProxyAdmin
 * unzip
 * node and npm
 
-It is assumed that the MapProxy configuration directories is structured below a single configuration root directory:
+It is assumed that the MapProxy configuration resides within the bounds of a single configuration root directory:
 /path/to/your/mapproxy/config. The directories for the caches and the MultiMapProxy 
 configurations are assumed to be subdirectories of this root directory.
 
