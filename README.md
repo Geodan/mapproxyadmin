@@ -48,6 +48,12 @@ configurations are assumed to be subdirectories of this root directory.
 
 6. open http://host.example.com:8083 in your browser
 
+For MapProxyAdmin to function properly, it should have permissions to alter files in caches directories and the MultiMapProxy config directory. This can be achieved by letting node run under the same account as MapProxy. For instance, if MapProxy is running as a wsgi service under Linux Apache, then node should run under account www-data:
+
+        sudo -u www-data node index.js
+
+For security, it is strongly advised to thoroughly restrict access to MapProxyAdmin. Users can easily destroy your MapProxy configuration or may find ways to change files on your file system (although some basic measures where taken to try to prevent this).
+
 ## Develop
 The MapProxyAdmin source code for both client and server are JavaScript. The server uses Node and some node modules (Express, WMSCapabilities and JSYaml to name some), the client is based on WebComponents using [Polymer](https://www.polymer-project.org/) LitElement and LitHtml. Client development requires installation of polymer-cli
 
