@@ -363,8 +363,7 @@ class MapproxyGetCaps extends LitElement {
                 "cache":{
                     "meta_buffer":200,
                     "meta_size":[4,4],
-                    "base_dir":pathJoin([localConfig.mapproxydir,localConfig.mapproxy_cache,configname]),
-                    "lock_dir":pathJoin([localConfig.mapproxydir, localStorage.mapproxy_locks])
+                    "base_dir":pathJoin([localConfig.mapproxydir,localConfig.mapproxy_cache,configname])
                 },
                 "image":{
                     "resampling_method":"bicubic"
