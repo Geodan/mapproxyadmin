@@ -1,16 +1,19 @@
 {
-    "mapproxydir" : "/home/user/mapproxy",
+    "adminserver" : "http://localhost:8083/",
+    "mapproxydir" : "/path/to/root/of/mapproxy",
+    "mapproxy_projects": "projects",
+    "mapproxy_cache": "mp",
     "metadata": {
-        "title":"title",
-        "abstract":"abstract",
-        "online_resource":"http://localhost/mapproxy",
+        "title":"Default Title",
+        "abstract":"Default Abstract",
+        "online_resource":"http://host.example.org/mapproxy",
         "contact":{
-            "person":"Project support",
+            "person":"Administrator",
             "position":"Contact",
-            "organization": "example.org",
-            "city": "My City",
-            "postcode": "POSTCODE",
-            "country": "Country",
+            "organization": "Example Org",
+            "city": "City",
+            "postcode": "1000",
+            "country": "your Country",
             "email":"info@example.org"
         },
         "access_constraints":"None",

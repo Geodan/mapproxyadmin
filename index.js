@@ -23,7 +23,7 @@ app.use(express.json({limit:'5mb'}));
 app.use(cors());
 
 app.get('/mapproxylist', (req, res) => {
-    fsPromises.readdir(pathJoin([config.mapproxydir,'projects']), {withFileTypes:true}).then(dir=>{
+    fsPromises.readdir(pathJoin([config.mapproxydir,config.mapproxy_projects]), {withFileTypes:true}).then(dir=>{
         const filenames = dir.filter(dirent=>dirent.isFile()&&(dirent.name.endsWith('.yaml')||dirent.name.endsWith('.yml'))).map(dirent=>dirent.name);
         Promise.all(filenames.map(filename=>readYaml(filename))).then(values=>res.json(values));
     }).catch(error=>{
@@ -41,19 +41,19 @@ app.get('/mapproxyread/:mpconfig', (req, res) => {
 app.post('/mapproxyupdate/:mpconfig', (req, res) => {
     const mpconfig = sanitize(req.params.mpconfig);
     const yaml = jsyaml.safeDump(req.body, {styles: {'!!null': ''}});
-    fsPromises.writeFile(pathJoin([config.mapproxydir,'projects/' + mpconfig]), yaml)
+    fsPromises.writeFile(pathJoin([config.mapproxydir,config.mapproxy_projects,mpconfig]), yaml)
         .then(()=>res.json({name: mpconfig, result: "saved"}))
         .catch((error)=>res.json({name: mpconfig, error: error}));
 })
 
 function trashFile(name, number) {
-    const trashedPath = pathJoin([config.mapproxydir,'projects/trash/' + name + number]);
+    const trashedPath = pathJoin([config.mapproxydir,config.mapproxy_projects, 'trash',name + number]);
     return fsPromises.stat(trashedPath).then((stat)=>{
         return false; /* file exists */
     }).catch(err=>{
         if (err.code == 'ENOENT') {
             /* file does not exist */
-            return fsPromises.rename(pathJoin([config.mapproxydir,'projects/' + name]), trashedPath)
+            return fsPromises.rename(pathJoin([config.mapproxydir,config.mapproxy_projects,name]), trashedPath)
             .then(()=>{
                 return true;
             })
@@ -77,7 +77,7 @@ app.get('/mapproxydelete/:mpconfig', async (req, res) => {
         return;
     }
     try {
-        await fsPromises.mkdir(pathJoin([config.mapproxydir,'projects/trash']));
+        await fsPromises.mkdir(pathJoin([config.mapproxydir,config.mapproxy_projects,'trash']));
     } catch (err) {
         if (err.code !== 'EEXIST') {
             console.log(err);
@@ -121,7 +121,6 @@ function pathJoin(parts, sep){
  }
 
 function clearCache(mpconfig, cachename) {
-    console.log('clearCache(' + mpconfig + ', ' + cachename+')');
     return getCachePaths(mpconfig, cachename).then(result=>{
         if (result.error) {
             return {name:mpconfig, error: result.error};
@@ -163,7 +162,7 @@ function getCachePaths(mpconfig, cachename) {
         }
         let appendToCacheName = (cacheType === 'file');
         let grids = json.config.caches[cachename].grids;
-        let base_dir = pathJoin([config.mapproxydir,'mp']);
+        let base_dir = pathJoin([config.mapproxydir,config.mapproxy_cache]);
         if (json.config.globals 
                 && json.config.globals.cache 
                 && json.config.globals.cache.base_dir) {
@@ -209,7 +208,7 @@ function getCachePaths(mpconfig, cachename) {
 }
 
 function readYaml(mpconfig) {
-    const fullpath = pathJoin([config.mapproxydir,'projects/' + mpconfig]);
+    const fullpath = pathJoin([config.mapproxydir,config.mapproxy_projects,mpconfig]);
     return fsPromises.readFile(fullpath).then(data=>{
         return {name: mpconfig, config: jsyaml.safeLoad(data)};
     }).catch(error=>{
