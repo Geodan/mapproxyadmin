@@ -1,5 +1,9 @@
 {
     "adminserver" : "http://host.example.com:8083/",
+    "mapproxydir" : "/path/to/root/of/mapproxy",
+    "mapproxy_projects": "projects",
+    "mapproxy_cache": "mp",
+    "mapproxy_locks": "mplocks",
     "metadata": {
         "title":"Default Title",
         "abstract":"Default Abstract",

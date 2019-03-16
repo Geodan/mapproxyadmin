@@ -36,7 +36,7 @@ class MapproxyAdminApp extends LitElement {
         this.config = {};
         this.error = undefined;
         this.list = [];
-        fetch('./client_config.json')
+        fetch('./config.json')
             .then(response=>{
                 if (response.ok){
                     return response.json()
