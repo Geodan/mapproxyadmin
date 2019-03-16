@@ -45,6 +45,9 @@ class MapproxyAdminApp extends LitElement {
                 }
             })
             .then(json=>{
+                if (json.error) {
+                    throw Error(json.error);
+                }
                 this.config = json;
                 if (!window.localStorage.config) {
                     window.localStorage.config = JSON.stringify(json);
