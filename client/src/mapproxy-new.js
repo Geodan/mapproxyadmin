@@ -2,6 +2,7 @@ import {LitElement, html, css} from 'lit-element';
 
 import './mapproxy-config';
 import './mapproxy-getcaps';
+import './mp-accordion';
 
 /**
 * @polymer
@@ -20,6 +21,9 @@ class MapproxyNew extends LitElement {
             :host {
                 display: block;
             }
+            .panel {
+                margin-left: 20px;
+            }
         `
     }
     constructor() {
@@ -29,8 +33,10 @@ class MapproxyNew extends LitElement {
     }
     render(){
         return html`
-            <button @click="${e=>this.toggleOpen(e)}">New mapproxy config...</button><br>
+            <mp-accordion @click="${e=>this.toggleOpen(e)}">New mapproxy config...</mp-accordion>
+            <div class="panel">
             ${this.mapproxyNewForm()}
+            </div>
             `
     }
     mapproxyNewForm() {

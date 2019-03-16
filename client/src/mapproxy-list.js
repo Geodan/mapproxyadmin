@@ -1,5 +1,6 @@
-import {LitElement, html} from 'lit-element';
+import {LitElement, html, css} from 'lit-element';
 import './mapproxy-item';
+import './mp-accordion';
 
 /**
 * @polymer
@@ -15,6 +16,12 @@ export class MapproxyList extends LitElement {
             localConfig: {type: Object}
         };
     }
+    static get styles() {
+        return css`
+            :host {display: block;}
+            .panel {margin-left: 20px;}
+        `
+    }
     constructor() {
         super();
         this.config = {};
@@ -22,15 +29,17 @@ export class MapproxyList extends LitElement {
         this.list = [];
     }
     render(){
-        return html`<button @click="${e=>this.toggleOpen(e)}">List mapproxy configs...</button><br>
-        ${this.renderList()}`
+        return html`<mp-accordion @click="${e=>this.toggleOpen(e)}">List mapproxy configs...</mp-accordion>
+        <div class="panel">
+        ${this.renderList()}
+        </div>`
     }
     renderList() {
         if (!this.open) {
             return html``;
         }
         return html`${this.list.map(item=>html`
-            <mapproxy-item .item="${item}" .localConfig="${this.localConfig}"></mapproxy-item><br>`)}`;
+            <mapproxy-item .item="${item}" .localConfig="${this.localConfig}"></mapproxy-item>`)}`;
     }
     toggleOpen(e) {
         this.open = !this.open;

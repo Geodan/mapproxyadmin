@@ -1,6 +1,7 @@
 import {LitElement, html, css} from 'lit-element';
 
 import './mapproxy-layer';
+import './mp-accordion';
 
 /**
 * @polymer
@@ -17,10 +18,10 @@ class MapproxyItem extends LitElement {
     static get styles() {
         return css `
             :host {
-                display: block;                
+                display: block;
             }
-            .iteminfo {
-                margin-left: 10px;
+            .panel {
+                margin-left: 20px;
             }
         `
     }
@@ -33,29 +34,37 @@ class MapproxyItem extends LitElement {
     shouldUpdate(changedProperties) {
         if (changedProperties.has('item')) {
             this.itemname = this.item.name.replace(/.yaml$/, '');
+            this.open = false;
         }
         return true;
     }
-    
     render(){
-        
         if (this.item.name) {
             return html`
-                <a href="${this.localConfig.metadata.online_resource}/${this.itemname}/demo" target="mapproxypreview">${this.itemname}</a>
-                <button @click="${(e)=>this.toggleOpen(e)}">${this.open?'close':'open'}</button>
-                <button @click="${e=>this.deleteItem(e)}">delete</button>
-                ${this.open?html`<div class="iteminfo">
-                    <b>services</b>: ${Object.keys(this.item.config.services).map(key=>html`${key} `)}<br>
-                    <b>metadata</b>:<br>${this.htmlTree(this.item.config.services.wms.md)}
-                    <b>layers</b>:<br>${this.item.config.layers.map(layer=>html`<mapproxy-layer .itemname="${this.itemname}" .layer="${layer}" .localConfig="${this.localConfig}"></mapproxy-layer>`)}
-                    </div>
-                    `
-                    :''}
-                `;
-
+                <mp-accordion @click="${(e)=>this.toggleOpen(e)}" .open="${this.open}">${this.item.name}</mp-accordion>
+                <div class="panel">
+                ${this.renderItem()}
+                </div>
+                    `;
         }
         return html ``;
     }
+    renderItem() {
+        if (!this.open) {
+            return html ``;
+        }
+        return html`
+            <a href="${this.localConfig.metadata.online_resource}/${this.itemname}/demo" target="mapproxypreview">preview</a> ${this.item.name}
+            <button @click="${e=>this.deleteItem(e)}">delete</button><br>
+            <b>services</b>: ${Object.keys(this.item.config.services).map(key=>html`${key} `)}<br>
+            <b>metadata</b>:<br>${this.htmlTree(this.item.config.services.wms.md)}
+            <b>layers</b>:
+            <ul>
+            ${this.item.config.layers.map(layer=>html`<li><mapproxy-layer .itemname="${this.itemname}" .item="${this.item}" .layer="${layer}" .localConfig="${this.localConfig}"></mapproxy-layer></li>`)}
+            </ul>
+            `
+    }
+
     toggleOpen(e) {
         this.open = !this.open;
     }

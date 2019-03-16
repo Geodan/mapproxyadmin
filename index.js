@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env nodejs
 
 const createWmsUrl = require('./wmsurl.js');
 //const DOMParser = global.DOMParser = require('xmldom').DOMParser;
@@ -23,7 +23,7 @@ app.use(express.json({limit:'5mb'}));
 app.use(cors());
 
 app.get('/mapproxylist', (req, res) => {
-    fsPromises.readdir(config.mapproxydir + '/projects/', {withFileTypes:true}).then(dir=>{
+    fsPromises.readdir(pathJoin([config.mapproxydir,'projects']), {withFileTypes:true}).then(dir=>{
         const filenames = dir.filter(dirent=>dirent.isFile()&&(dirent.name.endsWith('.yaml')||dirent.name.endsWith('.yml'))).map(dirent=>dirent.name);
         Promise.all(filenames.map(filename=>readYaml(filename))).then(values=>res.json(values));
     }).catch(error=>{
@@ -41,19 +41,19 @@ app.get('/mapproxyread/:mpconfig', (req, res) => {
 app.post('/mapproxyupdate/:mpconfig', (req, res) => {
     const mpconfig = sanitize(req.params.mpconfig);
     const yaml = jsyaml.safeDump(req.body, {styles: {'!!null': ''}});
-    fsPromises.writeFile(config.mapproxydir + 'projects/' + mpconfig, yaml)
+    fsPromises.writeFile(pathJoin([config.mapproxydir,'projects/' + mpconfig]), yaml)
         .then(()=>res.json({name: mpconfig, result: "saved"}))
         .catch((error)=>res.json({name: mpconfig, error: error}));
 })
 
 function trashFile(name, number) {
-    const trashedPath = config.mapproxydir + 'projects/trash/' + name + (number?number:'');
+    const trashedPath = pathJoin([config.mapproxydir,'projects/trash/' + name + number]);
     return fsPromises.stat(trashedPath).then((stat)=>{
         return false; /* file exists */
     }).catch(err=>{
         if (err.code == 'ENOENT') {
             /* file does not exist */
-            return fsPromises.rename(config.mapproxydir + 'projects/' + name, trashedPath)
+            return fsPromises.rename(pathJoin([config.mapproxydir,'projects/' + name]), trashedPath)
             .then(()=>{
                 return true;
             })
@@ -68,55 +68,85 @@ function trashFile(name, number) {
     });
 }
 
-app.get('/mapproxydelete/:mpconfig', (req, res) => {
+app.get('/mapproxydelete/:mpconfig', async (req, res) => {
     const mpconfig = sanitize(req.params.mpconfig);
-    if (!fs.existsSync(config.mapproxydir + 'projects/' + mpconfig)) {
-        res.json({name: mpconfig, error: 'file does not exist'});
+    json = await readYaml(mpconfig);
+    if (json.error) {
+        json.name = mpconfig;
+        res.json(json);
         return;
     }
-    fsPromises.mkdir(config.mapproxydir + 'projects/trash')
-        .catch(err=>{if (err.code !== 'EEXIST') {console.log(err)}})
-        .finally(async ()=>{
-            console.log('start trashing file');
-            for (let i = 0; i < 300; i++) {
-                let result = await trashFile(mpconfig, i);
-                if (result) {
-                    res.json({name: mpconfig, result: 'ok'})
-                    return;
-                }
-            }
-            res.json({name: mpconfig, result: 'move to trash failed, need to empty trash?'})
-        })
+    try {
+        await fsPromises.mkdir(pathJoin([config.mapproxydir,'projects/trash']));
+    } catch (err) {
+        if (err.code !== 'EEXIST') {
+            console.log(err);
+            res.json({name:mpconfig, error: JSON.stringify(err)});
+            return;
+        }
+    } finally {
+        // clear all caches
+        await Promise.all(Object.keys(json.config.caches).map(key=>clearCache(mpconfig,key).then(result=>{
+            return;
+        })));
+    }
+    for (let i = 0; i < 300; i++) {
+        let result = await trashFile(mpconfig, i);
+        if (result) {
+            res.json({name:mpconfig, result: "ok"});
+            return;
+        }
+    }
+    res.json({name: mpconfig, error: 'move to trash failed, need to empty trash?'});
 })
 
 app.get('/mapproxyclearcache/:mpconfig/:cachename', (req, res) => {
     const mpconfig = sanitize(req.params.mpconfig);
     const cachename = sanitize(req.params.cachename);
-    getCachePaths(mpconfig, cachename).then(result=>{
+    clearCache(mpconfig, cachename).then(result=>res.json(result));
+});
+
+function pathJoin(parts, sep){
+    const separator = sep || '/';
+    parts = parts.map((part, index)=>{
+        if (index) {
+            part = part.replace(new RegExp('^' + separator), '');
+        }
+        if (index !== parts.length - 1) {
+            part = part.replace(new RegExp(separator + '$'), '');
+        }
+        return part;
+    })
+    return parts.join(separator);
+ }
+
+function clearCache(mpconfig, cachename) {
+    console.log('clearCache(' + mpconfig + ', ' + cachename+')');
+    return getCachePaths(mpconfig, cachename).then(result=>{
         if (result.error) {
-            res.json(result);
+            return {name:mpconfig, error: result.error};
         } else {
             const caches = result.result;
             if (caches.length) {
-                Promise.all(caches.map(path=>{
+                return Promise.all(caches.map(path=>{
                     return deleteFolderRecursive(path)
                 }))
-                .then(res.json({name: mpconfig, result: caches}))
+                .then(()=>{return {name: mpconfig, result: caches}})
+                .catch(error=>{return {name: mpconfig, error: error}})
             } else {
-                res.json({name: mpconfig, error: 'cache not found'});
+                return {name: mpconfig, error: 'cache not found'};
             }
         }
     }).catch(err=>{
-        res.json({name:mpconfig, error: err});
+        return {name:mpconfig, error: err};
     })
-});
+}
 
 function getCachePaths(mpconfig, cachename) {
     return readYaml(mpconfig).then(json=>{
         if (json.error) {
             return json;
         }
-        cachename += '_cache';
         if (!json.config.caches.hasOwnProperty(cachename)) {
             return {name: mpconfig, error: `${cachename} not in ${mpconfig}`}
         }
@@ -133,7 +163,7 @@ function getCachePaths(mpconfig, cachename) {
         }
         let appendToCacheName = (cacheType === 'file');
         let grids = json.config.caches[cachename].grids;
-        let base_dir = config.mapproxydir + 'mp';
+        let base_dir = pathJoin([config.mapproxydir,'mp']);
         if (json.config.globals 
                 && json.config.globals.cache 
                 && json.config.globals.cache.base_dir) {
@@ -142,8 +172,8 @@ function getCachePaths(mpconfig, cachename) {
         if (json.config.caches[cachename].base_dir) {
             base_dir = json.config.caches[cachename].base_dir;
         }
-        if (json.config.caches[cachename].cache.directory) {
-            base_dir = json.config.caches[cachename].cache.directory;
+        if (json.config.caches[cachename].directory) {
+            base_dir = json.config.caches[cachename].directory;
             appendToCacheName = false;
         }
         if (!base_dir.startsWith(config.mapproxydir)) {
@@ -179,11 +209,12 @@ function getCachePaths(mpconfig, cachename) {
 }
 
 function readYaml(mpconfig) {
-    return fsPromises.readFile(config.mapproxydir + 'projects/' + mpconfig).then(data=>{
+    const fullpath = pathJoin([config.mapproxydir,'projects/' + mpconfig]);
+    return fsPromises.readFile(fullpath).then(data=>{
         return {name: mpconfig, config: jsyaml.safeLoad(data)};
     }).catch(error=>{
         if (error.code === 'ENOENT') {
-            return {name: mpconfig, error: 'not found'}
+            return {name: mpconfig, error: `${mpconfig} not found`}
         }
         return {name: mpconfig, error: error};
     });
@@ -223,37 +254,6 @@ app.get('/getcapabilities', (req, res) => {
         });
 });
 
-if (!config.mapproxydir.endsWith('/')) {
-    config.mapproxydir += '/';
-}
-if (!config.metadata.online_resource.endsWith('/')) {
-    config.metadata.online_resource += '/';
-}
-
-
-function quote(str) {
-    return str.replace(/'/g,"''").replace(/[\r\n]+/g,"\\n");
-}
-
-function escape(name) {
-    return quote(name.replace(/ /g, '_').replace(/:/g, '_'))
-}
-
-function layerSRS(layer) {
-    let srs = layer.SRS.find(srs=>srs==='EPSG:3857');
-    if (!srs) {
-        // find first projected SRS
-        srs = layer.SRS.find(srs=>srs !== 'CRS:84' && srs !== 'EPSG:4326');
-    }
-    if (!srs) {
-        srs = layer.SRS.find(srs=>srs==='EPSG:4326');
-    }
-    if (!srs) {
-        srs = layer.SRS.length ? layer.SRS[0] : 'EPSG:3857';
-    }
-    return srs;
-}
-
 const deleteFolderRecursive = async path =>  {
     if (fs.existsSync(path)) {
         for (let entry of await fsPromises.readdir(path)) {
@@ -265,197 +265,5 @@ const deleteFolderRecursive = async path =>  {
         await fsPromises.rmdir(path);
     }
 };
-
-function isValidProxyLayer(layer) {
-    if (!layer.Name) {
-        return false;
-    }
-    if (layer.LatLonBoundingBox) {
-        if (layer.LatLonBoundingBox[0] < -180 || 
-            layer.LatLonBoundingBox[0] > 180 ||
-            layer.LatLonBoundingBox[2] < -180 || 
-            layer.LatLonBoundingBox[2] > 180 ||
-            layer.LatLonBoundingBox[1] < -90 ||
-            layer.LatLonBoundingBox[1] > 90 ||
-            layer.LatLonBoundingBox[1] < -90 ||
-            layer.LatLonBoundingBox[1] > 90) {
-                console.log(`Layer ${layer.Name}: Invalid boundingbox: ${layer.LatLonBoundingBox.join(',')}`);
-                return false;
-        }
-    }
-    return true;
-}
-
-function proxyLayer(layer) {
-    let result = '';
-    if (isValidProxyLayer(layer)) {
-        result = `
-  - name: '${escape(layer.Name)}'
-    title: '${quote(layer.Title)}'
-    abstract: '${quote(layer.Abstract?layer.Abstract:layer.Title)}'
-    sources: [${escape(layer.Name) + '_cache'}]
-    ${layer.ScaleHint?`
-    max_res: ${layer.ScaleHint.min / 1.4142}
-    min_res: ${layer.ScaleHint.max / 1.4142}
-    `:''}`;          
-    }
-    if (layer.Layer) {
-        result += layer.Layer.map(layer=>proxyLayer(layer)).join('');
-    }
-    return result;
-}
-function cacheLayer(layer) {
-    let result = '';
-    if (isValidProxyLayer(layer)) {
-        result = `
-    ${escape(layer.Name) + '_cache'}:
-      grids: [spherical_mercator]
-      sources: [${escape(layer.Name) + '_wms'}]
-      format: image/png
-      disable_storage: true`    
-    }
-    if (layer.Layer) {
-        result += layer.Layer.map(layer=>cacheLayer(layer)).join('');
-    }
-    return result;
-}
-
-function sourceLayer(layer, wmsServiceUrl) {
-    let result = '';
-    if (isValidProxyLayer(layer)) {
-        const srs = layerSRS(layer);
-        result = `
-    ${escape(layer.Name) + '_wms'}:
-      type: wms
-      wms_opts:
-        featureinfo: ${layer.queryable?'true':'false'}
-        legendgraphic: true
-      supported_srs: ['${srs}']
-      req:
-        url: '${wmsServiceUrl}'
-        layers: '${layer.Name}'
-        transparent: true
-      coverage:
-        bbox: [${layer.LatLonBoundingBox.join(',')}]
-        bbox_srs: 'EPSG:4326'`
-    }
-    if (layer.Layer) {
-        result += layer.Layer.map(layer=>sourceLayer(layer, wmsServiceUrl)).join('');
-    }
-    return result;
-}
-
-function getWmsServiceName(capabilities)
-{
-    if (capabilities.Capability.Layer.Name && capabilities.Capability.Layer.Name !== '') {
-        return escape(capabilities.Capability.Layer.Name);
-    }
-    if (capabilities.Capability.Layer.Title && capabilities.Capability.Title !== '') {
-        return escape(capabilities.Capability.Layer.Title);
-    }
-    return 'Noname'
-}
-
-app.get('/tempproxy', async (req, res)=> {
-    const wmsUrl = createWmsUrl(req.query.wmsurl, 'getcapabilities');
-    const capabilities = await getcapabilities(wmsUrl);
-    const wmsServiceUrl = capabilities.Capability.Request.GetMap.DCPType[0].HTTP.Get.OnlineResource;
-    const wmsServiceName = getWmsServiceName(capabilities);
-    const yml = `
-services:
-  demo:
-  tms:
-  wmts:
-  wms:
-    srs: ['EPSG:3857']
-    image_formats: ['image/jpeg', 'image/png']
-    md:
-      # metadata used in capabilities documents
-      title: '${req.query.servicetitle}'
-      abstract: '${req.query.serviceabstract}'
-      onlineresource: ${config.metadata.online_resource + 'tempproxy'}
-      contact:
-         person: ${req.query.contactpersonprimary}
-         position: Contactpunt
-         email: ${req.query.contactmail}
-      access_constraints: ${req.query.serviceaccessconstraints}
-      fees: ${req.query.servicefees}
-layers:
-${proxyLayer(capabilities.Capability.Layer)}
-caches:
-${cacheLayer(capabilities.Capability.Layer)}
-sources:
-${sourceLayer(capabilities.Capability.Layer, wmsServiceUrl)}
-grids:
-  global_geodetic_sqrt2:
-    base: GLOBAL_GEODETIC
-    res_factor: 'sqrt2'
-  spherical_mercator:
-    base: GLOBAL_MERCATOR
-    tile_size: [256, 256]
-    srs: 'EPSG:3857'
-    #res_factor: 'sqrt2'
-  nltilingschema:
-    tile_size: [256, 256]
-    srs: 'EPSG:28992'
-    bbox: [-285401.920, 22598.080, 595401.920, 903401.920]
-    bbox_srs: 'EPSG:28992'
-    min_res: 3440.64
-    max_res: 0.21
-    origin: sw
-
-globals:
-  # # coordinate transformation options
-  # srs:
-  #   # WMS 1.3.0 requires all coordiates in the correct axis order,
-  #   # i.e. lon/lat or lat/lon. Use the following settings to
-  #   # explicitly set a CRS to either North/East or East/North
-  #   # ordering.
-  #   axis_order_ne: ['EPSG:9999', 'EPSG:9998']
-  #   axis_order_en: ['EPSG:0000', 'EPSG:0001']
-  #   # you can set the proj4 data dir here, if you need custom
-  #   # epsg definitions. the path must contain a file named 'epsg'
-  #   # the format of the file is:
-  #   # <4326> +proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs  <>
-  #   proj_data_dir: '/path to dir that contains epsg file'
-
-  # # cache options
-  cache:
-    # where to store the cached images
-    base_dir: '${config.mapproxydir}mp/${wmsServiceName}'
-    # where to store lockfiles
-    lock_dir: '${config.mapproxydir}mplocks'
-    meta_size: [4, 4]
-    meta_buffer: 100
-  #   # request x*y tiles in one step
-  #   meta_size: [4, 4]
-  #   # add a buffer on all sides (in pixel) when requesting
-  #   # new images
-
-  # image/transformation options
-  image:
-      #resampling_method: nearest
-      # resampling_method: bilinear
-      resampling_method: bicubic
-  #   formats:
-  #     image/png:
-  #        encoding_options:
-  #          quantizer: fastoctree
-  #     jpeg_quality: 90
-  #     # stretch cached images by this factor before
-  #     # using the next level
-  #     # stretch_factor: 1.15
-  #    stretch_factor: 1.3
-  #     # shrink cached images up to this factor before
-  #     # returning an empty image (for the first level)
-  #     max_shrink_factor: 4.0
-`;
-    res.json({"result": yml, "caps": capabilities});
-    const f = fs.openSync(config.mapproxydir + 'projects/tempproxy.yaml', 'w');
-    fs.writeFileSync(f, yml);
-    fs.closeSync(f);
-})
-
-
 
 app.listen(port, () => console.log(`Mapproxy Admin API listening on port ${port}`));

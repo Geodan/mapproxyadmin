@@ -1,4 +1,4 @@
-import {LitElement, html} from 'lit-element';
+import {LitElement, html, css} from 'lit-element';
 import './mapproxy-list';
 import './mapproxy-new';
 import { pathJoin } from './util.js';
@@ -14,6 +14,22 @@ class MapproxyAdminApp extends LitElement {
             localConfig: {type: Object},
             list: {type: Array}
         };
+    }
+    static get styles() {
+        return css`
+            .config {
+                border: 1px solid gray;
+                border-radius: 5px;
+                margin-bottom: 15px;
+                padding: 5px;
+            }
+            .newconfig {
+                background: lightyellow;
+            }
+            .listconfig {
+                background: #e6ffe6;
+            }
+        `;
     }
     constructor() {
         super();
@@ -47,8 +63,8 @@ class MapproxyAdminApp extends LitElement {
             return html`${this.config.adminserver + 'mapproxylist'}: ${this.error}`;
         }
         return html`
-        <mapproxy-new .config="${this.config}" .list=${this.list} @localConfigUpdate="${e=>this.localConfigUpdate(e)}"></mapproxy-new>
-        <mapproxy-list .config="${this.config}" .list=${this.list} .localConfig="${this.localConfig}" @itemdelete="${e=>this.deleteItem(e)}"></mapproxy-list>
+        <mapproxy-new class="config newconfig" .config="${this.config}" .list=${this.list} @localConfigUpdate="${e=>this.localConfigUpdate(e)}" @itemadd="${e=>this.addItem(e)}"></mapproxy-new>
+        <mapproxy-list class="config listconfig" .config="${this.config}" .list=${this.list} .localConfig="${this.localConfig}" @itemdelete="${e=>this.deleteItem(e)}"></mapproxy-list>
         `;
     }
     fetchList(adminserver) {
@@ -74,6 +90,11 @@ class MapproxyAdminApp extends LitElement {
             }
             this.list = this.list.filter(item=>item.name!==configName);
         })
+    }
+    addItem(e) {
+        this.fetchList(this.config.adminserver)
+                    .then(json=>this.list = json)
+                    .catch(error=>this.error = JSON.stringify(error));
     }
     localConfigUpdate() {
         this.localConfig = JSON.parse(window.localStorage.config);

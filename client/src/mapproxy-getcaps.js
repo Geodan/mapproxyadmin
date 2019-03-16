@@ -2,6 +2,8 @@ import {LitElement, html, css} from 'lit-element';
 import { unsafeHTML } from 'lit-html/directives/unsafe-html.js'
 import { pathJoin } from './util.js'
 
+import './mp-accordion';
+
 function quote(str) {
     return str.replace(/'/g,"''").replace(/[\r\n]+/g,"\\n");
 }
@@ -44,6 +46,9 @@ class MapproxyGetCaps extends LitElement {
             :host {
                 display: block;                
             }
+            .panel {
+                margin-left: 20px;
+            }
             .error {
                 color: red;
             }
@@ -67,10 +72,12 @@ class MapproxyGetCaps extends LitElement {
     }
     render(){
         return html`
-            <button @click="${e=>this.toggleOpen()}">create from wms capabilities</button> Get layers from WMS capabilities<br>
+            <mp-accordion @click="${e=>this.toggleOpen()}">Get layers from WMS capabilities</mp-accordion>
+            <div class="panel">
             ${this.renderGetCapabilitiesForm()}
             ${this.renderErrorMessage()}
             ${this.renderCapabilities()}
+            </div>
             `
     }
     toggleOpen(){ 
@@ -154,7 +161,7 @@ class MapproxyGetCaps extends LitElement {
         this.updateCreateButton();
     }
     toggleAllChecks(e) {
-        const checkboxes = [...this.shadowRoot.querySelectorAll('input[type="checkbox"]')];
+        const checkboxes = Array.from(this.shadowRoot.querySelectorAll('input[type="checkbox"]'));
         checkboxes.forEach(checkbox=>{
             if(checkbox.checked!==e.target.checked) {
                 checkbox.checked = e.target.checked;
@@ -239,7 +246,7 @@ class MapproxyGetCaps extends LitElement {
             redirect: "follow",
             referrer: "client",
             body: JSON.stringify(config)
-        })
+        });
     }
     createMapproxyConfig() {
         const configname = this.shadowRoot.querySelector('#configname').value.trim().toLowerCase();
@@ -364,7 +371,14 @@ class MapproxyGetCaps extends LitElement {
                 }
             }
         }
-        this.postMapproxyConfig(localConfig.adminserver, configname, config);
+        this.postMapproxyConfig(localConfig.adminserver, configname, config)
+            .then(()=>{
+                this.dispatchEvent(new CustomEvent('itemadd', {
+                    detail: configname,
+                    bubbles: true,
+                    composed: true
+                }));
+            })
     }
 }
 

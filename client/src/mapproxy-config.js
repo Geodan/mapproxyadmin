@@ -1,5 +1,7 @@
 import {LitElement, html, css} from 'lit-element';
 
+import "./mp-accordion";
+
 /**
 * @polymer
 * @extends HTMLElement
@@ -13,11 +15,14 @@ class MapproxyConfig extends LitElement {
         };
     }
     static get styles() {
-        return css `
+        return css`
             :host {
                 display: block;                
             }
-        `
+            .panel {
+              margin-left: 20px;
+            }
+        `;
     }
     constructor() {
         super();
@@ -35,8 +40,10 @@ class MapproxyConfig extends LitElement {
         return true;
     }
     render(){
-        return html`<button @click="${e=>this.toggleOpen(e)}">Edit metadata</button><br>
+        return html`<mp-accordion @click="${e=>this.toggleOpen(e)}">Edit metadata</mp-accordion>
+            <div class="panel">
             ${this.configForm()}
+            </div>
             `
     }
     configForm(){
