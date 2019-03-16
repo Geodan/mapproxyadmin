@@ -1,5 +1,5 @@
 #private configuration
-server_config.json
+config.json
 public/src
 client/build
 
