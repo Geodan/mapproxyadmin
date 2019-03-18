@@ -4,5 +4,28 @@
     "rules": [
       "polymer-3"
     ]
-  }
+  },
+  "entrypoint": "index.html",
+  "shell": "src/mapproxyadmin-app.js",
+  "extraDependencies": [
+    "node_modules/@webcomponents/webcomponentsjs/bundles/**"
+  ],
+  "builds": [
+    {
+      "preset": "es5-bundled",
+      "js": {
+        "compile": "es5",
+        "minify": true,
+        "transformModulesToAmd": true
+      },
+      "css": {
+        "minify": true
+      },
+      "html": {
+        "minify": true
+      },
+      "bundle": true,
+      "addServiceWorker": false
+    }
+  ]
 }
