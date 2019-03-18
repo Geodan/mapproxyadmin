@@ -39,6 +39,8 @@ class MapproxyGetCaps extends LitElement {
             errorMessage: {type: String},
             createButtonDisabled: {type: Boolean},
             list: {type: Array},
+            createResult: {type: String},
+            getcapabilitiesResult: {type: String}
         };
     }
     static get styles() {
@@ -63,6 +65,8 @@ class MapproxyGetCaps extends LitElement {
         this.selectedLayers = new Set();
         this.createButtonDisabled = true;
         this.list = [];
+        this.createResult = "";
+        this.getcapabilitiesResult = "";
     }
     shouldUpdate(changedProperties) {
         if (changedProperties.has('list')) {
@@ -89,7 +93,7 @@ class MapproxyGetCaps extends LitElement {
         }
         return html`
             <input type="text" autocomplete="url" id="wmscapabilitiesurl" name="wmscapabilitiesurl" size="128" value="${this.getcapabilitiesurl}" placeholder="HTTP(s) address of WMS service">
-            <button @click="${e=>this.fetchCapabilities(e)}">Get</button>
+            <button @click="${e=>this.fetchCapabilities(e)}">Get</button> ${this.getcapabilitiesResult}
         `;
     }
     renderErrorMessage(){
@@ -119,7 +123,7 @@ class MapproxyGetCaps extends LitElement {
             <b>Layers</b><br>
             <input type="checkbox" id="allchecks" @click="${e=>this.toggleAllChecks(e)}" checked><Label for="allchecks">(un-)select all layers</Label><br>
             ${this.renderLayers(this.capabilities.Capability.Layer)}
-            <input type="text" @input="${e=>this.checkInput(e)}" id="configname" size="20" value="" placeholder="mapproxy_config_name"> <button ?disabled="${this.createButtonDisabled}" @click="${e=>this.createMapproxyConfig()}">Create</button>
+            <input type="text" @input="${e=>this.checkInput(e)}" id="configname" size="20" value="" placeholder="mapproxy_config_name"> <button ?disabled="${this.createButtonDisabled}" @click="${e=>this.createMapproxyConfig()}">Create</button> ${this.createResult}
             </div>
         `;
     }
@@ -183,6 +187,8 @@ class MapproxyGetCaps extends LitElement {
         });
     }
     fetchCapabilities(e) {
+        this.getcapabilitiesResult = 'Fetching...';
+        setTimeout(()=>this.getcapabilitiesResult = "", 10000);
         this.capabilities = {};
         this.errorMessage = "";
         this.selectedLayers = new Set();
@@ -194,18 +200,22 @@ class MapproxyGetCaps extends LitElement {
             fetch(fetchUrl)
                 .then(response=>{
                     if (!response.ok) {
+                        this.getcapabilitiesResult = response.statusText;
                         throw Error(response.statusText)
                     }
                     return response.json();
                 })
                 .then(json=>{
                     if (!json.Capability) {
+                        this.getcapabilitiesResult = "Invalid capabilities";
                         throw Error(JSON.stringify(json));
                     }
                     this.capabilities = json;
                     this.selectAllLayers(this.capabilities.Capability.Layer);
+                    this.getcapabilitiesResult = "Done";
                 })
                 .catch(error=>{
+                    this.getcapabilitiesResult = error;
                     this.capabilities = {};
                     this.errorMessage = error;
                 })
@@ -249,6 +259,7 @@ class MapproxyGetCaps extends LitElement {
         });
     }
     createMapproxyConfig() {
+        this.createResult = "Creating...";
         const configname = this.shadowRoot.querySelector('#configname').value.trim().toLowerCase();
         const localConfig = JSON.parse(window.localStorage.config);
         const selectedLayers = Array.from(this.selectedLayers).map(layername=>this.getCapabilitiesLayer(this.capabilities.Capability.Layer, layername));
@@ -370,14 +381,33 @@ class MapproxyGetCaps extends LitElement {
                 }
             }
         }
-        this.postMapproxyConfig(localConfig.adminserver, configname, config)
+        /*this.postMapproxyConfig(localConfig.adminserver, configname, config)
             .then(()=>{
                 this.dispatchEvent(new CustomEvent('itemadd', {
                     detail: configname,
                     bubbles: true,
                     composed: true
                 }));
-            })
+            })*/
+        this.postMapproxyConfig(localConfig.adminserver, configname, config).then((response) => {
+            setTimeout(()=>this.createResult = "", 10000);
+            if (!response.ok) {
+                this.createResult = response.statusText;
+            } else {
+                return response.json();
+            }}).then(json=> {
+                if (json.error) {
+                    this.capabilities = json.error;
+                } else {
+                    this.createResult = "Created!";
+                
+                    this.dispatchEvent(new CustomEvent('itemadd', {
+                        detail: configname,
+                        bubbles: true,
+                        composed: true
+                    }));  
+                }
+            });
     }
 }
 
