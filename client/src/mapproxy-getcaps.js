@@ -13,16 +13,19 @@ function escape(name) {
 }
 
 function layerSRS(layer) {
-    let srs = layer.SRS.find(srs=>srs==='EPSG:3857');
-    if (!srs) {
-        // find first projected SRS
-        srs = layer.SRS.find(srs=>srs !== 'CRS:84' && srs !== 'EPSG:4326');
-    }
-    if (!srs) {
-        srs = layer.SRS.find(srs=>srs==='EPSG:4326');
-    }
-    if (!srs) {
-        srs = layer.SRS.length ? layer.SRS[0] : 'EPSG:3857';
+    let srs;
+    if (layer.SRS && layer.SRS.length) {
+        srs = layer.SRS.find(srs=>srs==='EPSG:3857');
+        if (!srs) {
+            // find first projected SRS
+            srs = layer.SRS.find(srs=>srs !== 'CRS:84' && srs !== 'EPSG:4326');
+        }
+        if (!srs) {
+            srs = layer.SRS.find(srs=>srs==='EPSG:4326');
+        }
+        if (!srs) {
+            srs = layer.SRS.length ? layer.SRS[0] : 'EPSG:3857';
+        }
     }
     return srs;
 }
@@ -173,16 +176,24 @@ class MapproxyGetCaps extends LitElement {
             }
         })
     }
-    selectAllLayers(Layer) {
+    selectAllLayers(Layer, parent) {
         if (!Array.isArray(Layer)) {
             Layer = [Layer];
         }
         Layer.forEach(layer => {
+            if (parent && parent.SRS) {
+                const combinedSRS = new Set();
+                parent.SRS.forEach(srs=>combinedSRS.add(srs));
+                if (layer.SRS) {
+                    layer.SRS.forEach(srs=>combinedSRS.add(srs));
+                }
+                layer.SRS = Array.from(combinedSRS);
+            }
             if (layer.Name) {
                 this.selectedLayers.add(layer.Name);
             }
             if (layer.Layer) {
-                this.selectAllLayers(layer.Layer);
+                this.selectAllLayers(layer.Layer, layer);
             }
         });
     }
