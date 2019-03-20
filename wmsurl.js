@@ -67,7 +67,7 @@ function wmsUrl(baseUrl, request)
     urlInfo.search = "";
     extraParameters.forEach(parameter=>urlInfo.searchParams.append(parameter[0], parameter[1]));
     wmsParameters.forEach(parameter=>urlInfo.searchParams.append(parameter[0], parameter[1]));
-    return urlInfo.toString().replace('BBOX=%7Bbbox-epsg-3857%7D', 'BBOX={bbox-epsg-3857}')        
+    return urlInfo.toString().replace('BBOX=%7Bbbox-epsg-3857%7D', 'BBOX={bbox-epsg-3857}').replace('GETCAPABILITIES', 'GetCapabilities')
 }
 
 module.exports = wmsUrl;
