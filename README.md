@@ -91,11 +91,11 @@ The source code for the browser client resides in directory /client. The code is
 5. point your browser to http://localhost:8081 (the client runs on port 8081, the server on port 8083)
 
 ### Build client for integration into server
-Run the following commands in the /client directory:
+Run the following commands in the ***/client*** directory:
 
       polymer build
-      cd build/default
-      zip -r dist.zip
+      cd build/es5-bundled
+      zip -r dist.zip *
       cp dist.zip ../public
 
 
