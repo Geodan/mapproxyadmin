@@ -96,7 +96,7 @@ Run the following commands in the ***/client*** directory:
       polymer build
       cd build/es5-bundled
       zip -r dist.zip *
-      cp dist.zip ../public
+      cp dist.zip ../../../public
 
 
 
