@@ -10,16 +10,16 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "axios": "^0.18.0",
+    "@xmldom/xmldom": "^0.9.6",
+    "axios": "^1.7.9",
     "cors": "^2.8.5",
-    "express": "^4.16.4",
-    "fs-extra": "^7.0.1",
-    "js-yaml": "^3.13.1",
-    "sanitize-filename": "^1.6.1",
-    "wms-capabilities": "^0.4.0",
-    "xmldom": "^0.1.27"
+    "express": "^4.21.2",
+    "fs-extra": "^11.2.0",
+    "js-yaml": "^4.1.0",
+    "sanitize-filename": "^1.6.3",
+    "wms-capabilities": "^0.6.0"
   },
   "devDependencies": {
-    "nodemon": "^1.18.10"
+    "nodemon": "^3.1.9"
   }
 }
